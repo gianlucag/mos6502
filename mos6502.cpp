@@ -1214,7 +1214,7 @@ void mos6502::Op_SBC(uint16_t src)
 	
     if (IF_DECIMAL())
     {
-    	if ( ((A & 0x0F) - (IF_CARRY() ? 0 : 1)) < (src & 0x0F)) tmp -= 6;
+    	if ( ((A & 0x0F) - (IF_CARRY() ? 0 : 1)) < (m & 0x0F)) tmp -= 6;
         if (tmp > 0x99)
         {
         	tmp -= 0x60;
