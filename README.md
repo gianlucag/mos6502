@@ -1,4 +1,4 @@
-# MOS6502 Emulator in C++
+## MOS6502 Emulator in C++ ##
 
 This is my C++ implementation of the MOS Technology 6502 CPU. The code is written to be more readable than fast, however some minor tricks have been introduced to greatly reduce the overall execution time.
 
@@ -19,12 +19,12 @@ The emulator was extensively tested against this test suite:
 
 https://github.com/Klaus2m5/6502_65C02_functional_tests
 
-and in parallel emulation with fake6502 http://rubbermallet.org/fake6502.c
+and in parallel emulation with Fake6502 http://rubbermallet.org/fake6502.c
 
 so expect nearly 100% compliance with the real deal... at least on the normal behavior: as I said stuff like illegal opcodes or hardware glitches are currently not implemented. 
  
 
-## Why yet another 6502 emulator?
+## Why yet another 6502 emulator? ##
 
 Just for fun :). This CPU (and its many derivatives) powered machines such as:
 
@@ -32,13 +32,13 @@ Just for fun :). This CPU (and its many derivatives) powered machines such as:
  * Nintendo Entertainment system (NES)
  * Atari 2600
  * Commodore 64
- * BBC micro
+ * BBC Micro
 
 and many other embedded devices still used today. 
 You can use this emulator in your machine emulator project. However cycle accuracy is not yet implemented so mid-frame register update tricks cannot be reliably emulated.  
 
 
-## Some things emulators: emulator types
+## Some things emulators: emulator types ##
 
 You can group all the CPU emulators out there in 4 main categories:
 
@@ -55,7 +55,7 @@ The PLA/microcode based are the best as they offer both speed and limited comple
 The switch-case based are the simpler ones but also the slowest: the opcode value is thrown inside a huge switch case which selects the code snippet to execute; compilers can optimize switch case to reach near O(log(n)) complexity but they hardly do it when dealing with sparse integers (like most of the CPU opcode tables). 
 
 
-## Emulator features
+## Emulator features ##
 
 My project is a simple jump-table based emulator: the actual value of the opcode (let's say 0x80) is used to address a function pointer table, each entry of such table is a C++ function which emulates the behavior of the corresponding real instruction. 
 
@@ -83,7 +83,7 @@ All the 151 opcodes are emulated. Since the 6502 CPU uses 8 bit to encode the op
 The illegals are not supported yet, so instead a simple NOP is executed.
 
 
-## Inner main loop
+## Inner main loop ##
 
 It's a classic fetch-decode-execute loop:
 
@@ -104,7 +104,7 @@ while(start + n > cycles && !illegalOpcode)
 The next instruction (the opcode value) is retrieved from memory. Then it's decoded (i.e. the opcode is used to address the instruction table) and the resulting code block is executed.   
 
 
-##Public methods##
+## Public methods ##
  
 The emulator comes as a single C++ class with five public methods:
 
@@ -152,7 +152,7 @@ void Run(uint32_t n);
 
 It runs the CPU for the next 'n' machine instructions.
 
-## Links
+## Links ##
 
 Some useful stuff I used...
 
