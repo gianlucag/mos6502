@@ -156,11 +156,11 @@ It runs the CPU for the next 'n' machine instructions.
 
 Some useful stuff I used...
 
-https://en.wikipedia.org/wiki/MOS_Technology_6502
+http://en.wikipedia.org/wiki/MOS_Technology_6502
 
 http://www.6502.org/documents/datasheets/mos/
 
-https://www.mdawson.net/vic20chrome/cpu/mos_6500_mpu_preliminary_may_1976.pdf
+http://www.mdawson.net/vic20chrome/cpu/mos_6500_mpu_preliminary_may_1976.pdf
 
 http://rubbermallet.org/fake6502.c
 
