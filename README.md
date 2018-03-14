@@ -25,6 +25,9 @@ Planned features that I want to implement:
 - If Gianluca implements them, then illegal opcodes.
 - If Gianluca implements them, hardware glitches.
 
+Some possibilities, but not decided:
+- Implmentation of other variants of the 6502.
+
 ## Testing
 
 According to Gianluca, his emulator was tested against the following test suite:
