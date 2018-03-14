@@ -1,168 +1,111 @@
-## MOS6502 Emulator in C++ ##
+# MOS6502 Simulator in C++
 
-This is my C++ implementation of the MOS Technology 6502 CPU. The code is written to be more readable than fast, however some minor tricks have been introduced to greatly reduce the overall execution time.
+Based on Gianluca's [MOS6502 Emulator in C++](https://github.com/gianlucag/mos6502), I forked and
+modified his emulator to create an implementation of a 6502 CPU simulator that I could use to test
+algorithms and get an accurate cycle count.
 
-main features:
+## Features
 
- * 100% coverage of legal opcodes
- * decimal mode implemented
- * read/write bus callback
- * jump table opcode selection
+The main features from Gianluca's are retained:
+- 100% coverage of legal opcodes.
+- Jump table for op-code execution.
 
-still to implement
+New features I've added are:
+- Use of a C++ concept called `SystemBus` that will provide bus reads, writes. _/IRQ_ asserts, and
+  _/NMI_ asserts.
+- Accurate cycle counting for all legal opcodes and interrupt asserts.
+- Addition of an instruction or step counter.
+- Inner loop now based arround stepping, which can also be manually invoked for debugging.
 
- * 100% cycle accuracy
- * illegal opcodes
- * hardware glitches, the known ones of course :-)
+## Plans
 
-The emulator was extensively tested against this test suite:
+Planned features that I want to implement:
+- Definition of a `Debugger` concept for hanlding breakpoints and debugging symbols or listings,
+  along with a basic implementation.
+- If Gianluca implements them, then illegal opcodes.
+- If Gianluca implements them, hardware glitches.
+
+## Testing
+
+According to Gianluca, his emulator was tested against the following test suite:
 
 https://github.com/Klaus2m5/6502_65C02_functional_tests
 
-and in parallel emulation with Fake6502 http://rubbermallet.org/fake6502.c
+I provided `mos6502-test.cpp` to tests the cycle accuracy called.
 
-so expect nearly 100% compliance with the real deal... at least on the normal behavior: as I said stuff like illegal opcodes or hardware glitches are currently not implemented. 
- 
+## API
 
-## Why yet another 6502 emulator? ##
+### CPU
 
-Just for fun :). This CPU (and its many derivatives) powered machines such as:
+The `mos::mos6502` class is the 6502 CPU simulator. Using `mos::mos6502` requires at least one
+template parameter to define the additional hardware attached to the simulated system. This type
+must implements the `SystemBus` concept. The `mos::mos6502 class provide a nice public API.
 
- * Apple II
- * Nintendo Entertainment system (NES)
- * Atari 2600
- * Commodore 64
- * BBC Micro
+- _`mos6502(args...)`_; a variable template constructor that will pass all of its arguments to the
+  `SystemBus`.
+- _`bus()`_; provides access to the system bus.
+- _`a()`_, _`a(byte)`_, _`x()`_, _`x(byte)`_, _`y()`_, _`y(byte)`_; provides read/write access to
+  the main registers of the CPU.
+- _`sp()`_, _`pc()`_; provides read-only access to the stack-pointer and program-counter registers.
+- _`go(word)`_; provides a means to jump the CPU program-counter to any location on the system bus.
+- _`status()`_; provides read/write access to the CPU status flags. These are available using:
+	- _`negative()`_, _`negative(bool)`_;  the _N_/_Negative_ flag.
+	- _`overflow()`_, _`overflow(bool)`_;  the _V_/_oVerflow_ flag.
+	- _`brk()`_, _`brk(bool)`_;  the _B_/_Break_ flag.
+	- _`decimal()`_, _`decimal(bool)`_;  the _D_/_Decimal Enable_ flag.
+	- _`interrupt()`_, _`interrupt(bool)`_;  the _I_/_Interrupt Disable_ flag.
+	- _`zero()`_, _`zero(bool)`_;  the _Z_/_Zero_ flag.
+	- _`carry()`_, _`carry(bool)`_;  the _C_/_Carry_ flag.
+	- _`get()`_; gets the raw value of the register.
+	- _`set(byte)`_; sets the raw value of the register.
+	- _`reset()`_; resets the register to the usual initial value.
+- _`cycles()`_, _`steps()`_; counters that indicate the number of cycles and steps the CPU has
+  performed.
+- _`power_off()`_; Powers the CPU off, stopping all running code.
+- _`reset()`_; Resets the CPU to its initial state.
+- _`run()`_; Runs the CPU till it is powered off or lands on an illegal instruction.
+- _`step()`_; Executes the next instruction and stops.
+- _`push(byte)`_,_`push_word(word)`_; pushes data to the stack without using cycles or steps.
+- _`pop(byte)`_,_`pop_word(word)`_; pushes data to the stack without using cycles or steps.
 
-and many other embedded devices still used today. 
-You can use this emulator in your machine emulator project. However cycle accuracy is not yet implemented so mid-frame register update tricks cannot be reliably emulated.  
+### SystemBus
 
+One C++ concept is defined by this library, the `SystemBus`. This concept is is used to provide the
+CPU with access to memory, memory mapped hardware, and interrupt sources. A default implemenation
+of this concept is provided called `mos::basic_memory`. A `SystemBus` must support the following
+features.
 
-## Some things emulators: emulator types ##
+- **`SystemBus()`**. _DefaultConstructible_, requires the type can be constructed by the default
+  without any additional arguments.
+- **`~SystemBus() noexcept`**. _Destructible_, requires the type can be destructed without throwing
+  any exceptions.
+- **`bool pending_irq() const noexcept`**. requires the type can signal if the _/IRQ_ line is
+  asserted.
+- **`bool pending_nmi() const noexcept`**. requires the type can signal if the _/NMI_ line is
+  asserted.
+- **`void write(std::uint16_t address, std::uint8_t data, bool burn = false) noexcept`**. requires
+  the type can write to the system bus, and optionally provide a means to write to read-only
+  memory. Please note the CPU will never pass trur for the `burn` argument.
+- **`auto read(std::uint16_t address) noexcept -> std::uint8_t`**. requires the type can read from
+  system bus.
 
-You can group all the CPU emulators out there in 4 main categories:
+A `SystemBus` may also support a constructor with number of arguments which are forwarded to it by
+the `mos::mos6502`.
 
- * switch-case based
- * jump-table based
- * PLA or microcode emulation based
- * graph based
+When the `SystemBus` is exposed from `mos::mos6502`, it is wrapped by `mos::system_bus` which
+provides many additional useful features. These are:
 
-The latter are the most accurate as they emulate the connections between transistors inside the die of the CPU. They emulate even the unwanted glitches, known and still unknown. However, the complexity of such emulators is non-linear with the number of transistors: in other word, *you don't want to emulate a modern Intel quad core using this approach!!!*
-
-for an example check this out: http://visual6502.org/JSSim/index.html 
-
-The PLA/microcode based are the best as they offer both speed and limited complexity.
-The switch-case based are the simpler ones but also the slowest: the opcode value is thrown inside a huge switch case which selects the code snippet to execute; compilers can optimize switch case to reach near O(log(n)) complexity but they hardly do it when dealing with sparse integers (like most of the CPU opcode tables). 
-
-
-## Emulator features ##
-
-My project is a simple jump-table based emulator: the actual value of the opcode (let's say 0x80) is used to address a function pointer table, each entry of such table is a C++ function which emulates the behavior of the corresponding real instruction. 
-
-All the 13 addressing modes are emulated:
-
-```
-// addressing modes
-uint16_t Addr_ACC(); // ACCUMULATOR
-uint16_t Addr_IMM(); // IMMEDIATE
-uint16_t Addr_ABS(); // ABSOLUTE
-uint16_t Addr_ZER(); // ZERO PAGE
-uint16_t Addr_ZEX(); // INDEXED-X ZERO PAGE
-uint16_t Addr_ZEY(); // INDEXED-Y ZERO PAGE
-uint16_t Addr_ABX(); // INDEXED-X ABSOLUTE
-uint16_t Addr_ABY(); // INDEXED-Y ABSOLUTE
-uint16_t Addr_IMP(); // IMPLIED
-uint16_t Addr_REL(); // RELATIVE
-uint16_t Addr_INX(); // INDEXED-X INDIRECT
-uint16_t Addr_INY(); // INDEXED-Y INDIRECT
-uint16_t Addr_ABI(); // ABSOLUTE INDIRECT
-```
-
-All the 151 opcodes are emulated. Since the 6502 CPU uses 8 bit to encode the opcode value it also has a lot of "illegal opcodes" (i.e. opcode values other than the designed 151). Such opcodes perform weird operations, write multiple registers at the same time, sometimes are the combination of two or more "valid" opcodes. Such illegals were used to enforce software copy protection or to discover the exact CPU type. 
-
-The illegals are not supported yet, so instead a simple NOP is executed.
-
-
-## Inner main loop ##
-
-It's a classic fetch-decode-execute loop:
-
-```
-while(start + n > cycles && !illegalOpcode)
-{
-	// fetch
-	opcode = Read(pc++);
-	
-	// decode
-	instr = InstrTable[opcode];
-		
-	// execute
-	Exec(instr);
-}
-```
-
-The next instruction (the opcode value) is retrieved from memory. Then it's decoded (i.e. the opcode is used to address the instruction table) and the resulting code block is executed.   
-
-
-## Public methods ##
- 
-The emulator comes as a single C++ class with five public methods:
-
-```
-mos6502(BusRead r, BusWrite w);
-void NMI();
-void IRQ();
-void Reset();
-void Run(uint32_t n);
-```
-
-
-```mos6502(BusRead r, BusWrite w);```
-
-it's the class constructor. It requires you to pass two external functions:
-
-```
-uint8_t MemoryRead(uint16_t address);
-void MemoryWrite(uint16_t address, uint8_t value);
-```
-
-respectively to read/write from/to a memory location (16 bit address, 8 bit value). In such functions you can define your address decoding logic (if any) to address memory mapped I/O, external virtual devices and such.
-
-```
-void NMI();
-```
-
-triggers a Non-Mascherable Interrupt request, as done by the external pin of the real chip
-
-```
-void IRQ();
-```
-
-triggers an Interrupt ReQuest, as done by the external pin of the real chip
-
-```
-void Reset();
-```
-
-performs an hardware reset, as done by the external pin of the real chip
-
-```
-void Run(uint32_t n);
-```
-
-It runs the CPU for the next 'n' machine instructions.
+- _`read_word(address)`_; reads a word from the bus, using little-endian format.
+- _`write_work(address, word)`_; writes a word to the bus, using little-endian format.
+- _`fill(address, count, byte)`_; fills an area of the bus with the same byte.
+- _`load_input(address, first, last)`_; loads data from a pair of `InputIterators` onto the bus.
+- _`load_stream(address, stream)`_; loads data from an `istream` onto the bus.
 
 ## Links ##
 
-Some useful stuff I used...
-
-http://en.wikipedia.org/wiki/MOS_Technology_6502
-
-http://www.6502.org/documents/datasheets/mos/
-
-http://www.mdawson.net/vic20chrome/cpu/mos_6500_mpu_preliminary_may_1976.pdf
-
-http://rubbermallet.org/fake6502.c
-
-
-
+- Gianluca's [MOS6502 Emulator in C++](https://github.com/gianlucag/mos6502), the original source.
+- [Wikipedia's MOS Technology 6502](http://en.wikipedia.org/wiki/MOS_Technology_6502), provides
+  some history and basic information about the original CPU.
+- [6502.org Document Archive](http://www.6502.org/documents/datasheets/mos/), provides lots of
+  useful documents about the 6502.
+- [Preliminary data-sheet on the 6500 Microprocessor Series](http://www.mdawson.net/vic20chrome/cpu/mos_6500_mpu_preliminary_may_1976.pdf)
