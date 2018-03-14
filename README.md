@@ -34,7 +34,7 @@ According to Gianluca, his emulator was tested against the following test suite:
 
 https://github.com/Klaus2m5/6502_65C02_functional_tests
 
-I provided `mos6502-test.cpp` to tests the cycle accuracy called.
+I provided `mos6502-test.cpp` to tests the cycle accuracy.
 
 ## API
 
