@@ -591,8 +591,13 @@ uint16_t mos6502::Addr_ABI()
 	abs = (addrH << 8) | addrL;
 	
 	effL = Read(abs);
+
+#ifndef CMOS_INDIRECT_JMP_FIX
 	effH = Read((abs & 0xFF00) + ((abs + 1) & 0x00FF) );
-	
+#else
+	effH = Read(abs + 1);
+#endif
+
 	addr = effL + 0x100 * effH;
 	
 	return addr;
