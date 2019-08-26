@@ -42,7 +42,6 @@ using namespace std;
 class mos6502
 {
 private:
-
 	// registers
 	uint8_t A; // accumulator
 	uint8_t X; // X-index
@@ -64,6 +63,7 @@ private:
 	{
 		AddrExec addr;
 		CodeExec code;
+		uint8_t cycles;
 	};
 
 	Instr InstrTable[256];
@@ -176,10 +176,16 @@ private:
 	inline uint8_t StackPop();
 
 public:
-
+	enum CycleMethod {
+		INST_COUNT,
+		CYCLE_COUNT,
+	};
 	mos6502(BusRead r, BusWrite w);
 	void NMI();
 	void IRQ();
 	void Reset();
-	void Run(uint32_t n);
+	void Run(
+		int32_t cycles,
+		uint64_t& cycleCount,
+		CycleMethod cycleMethod = CYCLE_COUNT);
 };
