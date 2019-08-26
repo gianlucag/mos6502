@@ -895,8 +895,8 @@ void mos6502::Run(
 		Exec(instr);
 		cycleCount += instr.cycles;
 		cyclesRemaining -=
-			cycleMethod == CYCLE_COUNT  			? instr.cycles
-			/* cycleMethod == INST_COUNT */ 	: 1;
+			cycleMethod == CYCLE_COUNT        ? instr.cycles
+			/* cycleMethod == INST_COUNT */   : 1;
 	}
 }
 
