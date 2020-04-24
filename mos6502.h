@@ -59,7 +59,7 @@ private:
 	typedef void (mos6502::*CodeExec)(uint16_t);
 	typedef uint16_t (mos6502::*AddrExec)();
 
-	typedef struct Instr
+	struct Instr
 	{
 		AddrExec addr;
 		CodeExec code;

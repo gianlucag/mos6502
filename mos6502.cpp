@@ -677,8 +677,6 @@ mos6502::mos6502(BusRead r, BusWrite w)
 	instr.cycles = 2;
 	InstrTable[0x98] = instr;
 
-	Reset();
-
 	return;
 }
 
