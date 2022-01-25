@@ -819,15 +819,15 @@ uint16_t mos6502::Addr_INY()
 
 void mos6502::Reset()
 {
-	A = 0x00;
-	Y = 0x00;
-	X = 0x00;
+	A = reset_A;
+	Y = reset_Y;
+	X = reset_X;
 
 	pc = (Read(rstVectorH) << 8) + Read(rstVectorL); // load PC from reset vector
 
-	sp = 0xFD;
+	sp = reset_sp;
 
-	status |= CONSTANT;
+	status = reset_status | CONSTANT;
 
 	illegalOpcode = false;
 
@@ -902,6 +902,86 @@ void mos6502::Exec(Instr i)
 {
 	uint16_t src = (this->*i.addr)();
 	(this->*i.code)(src);
+}
+
+uint16_t mos6502::GetPC()
+{
+    return pc;
+}
+
+uint8_t mos6502::GetS()
+{
+    return sp;
+}
+
+uint8_t mos6502::GetP()
+{
+    return status;
+}
+
+uint8_t mos6502::GetA()
+{
+    return A;
+}
+
+uint8_t mos6502::GetX()
+{
+    return X;
+}
+
+uint8_t mos6502::GetY()
+{
+    return Y;
+}
+
+void mos6502::SetResetS(uint8_t value)
+{
+    sp = value;
+}
+
+void mos6502::SetResetP(uint8_t value)
+{
+    status = value | CONSTANT;
+}
+
+void mos6502::SetResetA(uint8_t value)
+{
+    A = value;
+}
+
+void mos6502::SetResetX(uint8_t value)
+{
+    X = value;
+}
+
+void mos6502::SetResetY(uint8_t value)
+{
+    Y = value;
+}
+
+uint8_t mos6502::GetResetS()
+{
+    return reset_sp;
+}
+
+uint8_t mos6502::GetResetP()
+{
+    return reset_status;
+}
+
+uint8_t mos6502::GetResetA()
+{
+    return reset_A;
+}
+
+uint8_t mos6502::GetResetX()
+{
+    return reset_X;
+}
+
+uint8_t mos6502::GetResetY()
+{
+    return reset_Y;
 }
 
 void mos6502::Op_ILLEGAL(uint16_t src)
