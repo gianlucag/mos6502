@@ -21,8 +21,8 @@ using namespace std;
 
 #define SET_NEGATIVE(x) (x ? (status |= NEGATIVE) : (status &= (~NEGATIVE)) )
 #define SET_OVERFLOW(x) (x ? (status |= OVERFLOW) : (status &= (~OVERFLOW)) )
-#define SET_CONSTANT(x) (x ? (status |= CONSTANT) : (status &= (~CONSTANT)) )
-#define SET_BREAK(x) (x ? (status |= BREAK) : (status &= (~BREAK)) )
+//#define SET_CONSTANT(x) (x ? (status |= CONSTANT) : (status &= (~CONSTANT)) )
+//#define SET_BREAK(x) (x ? (status |= BREAK) : (status &= (~BREAK)) )
 #define SET_DECIMAL(x) (x ? (status |= DECIMAL) : (status &= (~DECIMAL)) )
 #define SET_INTERRUPT(x) (x ? (status |= INTERRUPT) : (status &= (~INTERRUPT)) )
 #define SET_ZERO(x) (x ? (status |= ZERO) : (status &= (~ZERO)) )
