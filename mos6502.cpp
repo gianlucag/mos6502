@@ -936,27 +936,27 @@ uint8_t mos6502::GetY()
 
 void mos6502::SetResetS(uint8_t value)
 {
-    sp = value;
+    reset_sp = value;
 }
 
 void mos6502::SetResetP(uint8_t value)
 {
-    status = value | CONSTANT;
+    reset_status = value | CONSTANT;
 }
 
 void mos6502::SetResetA(uint8_t value)
 {
-    A = value;
+    reset_A = value;
 }
 
 void mos6502::SetResetX(uint8_t value)
 {
-    X = value;
+    reset_X = value;
 }
 
 void mos6502::SetResetY(uint8_t value)
 {
-    Y = value;
+    reset_Y = value;
 }
 
 uint8_t mos6502::GetResetS()
