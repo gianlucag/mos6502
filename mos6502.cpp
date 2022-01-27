@@ -1359,7 +1359,7 @@ void mos6502::Op_PLA(uint16_t src)
 void mos6502::Op_PLP(uint16_t src)
 {
 	status = StackPop() | CONSTANT | BREAK;
-	SET_CONSTANT(1);
+	//SET_CONSTANT(1);
 	return;
 }
 
