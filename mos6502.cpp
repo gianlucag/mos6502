@@ -823,7 +823,10 @@ void mos6502::Reset()
 	Y = reset_Y;
 	X = reset_X;
 
-	pc = (Read(rstVectorH) << 8) + Read(rstVectorL); // load PC from reset vector
+	// load PC from reset vector
+	uint8_t pcl = Read(rstVectorL);
+	uint8_t pch = Read(rstVectorH);
+	pc = (pch << 8) + pcl;
 
 	sp = reset_sp;
 
@@ -857,7 +860,11 @@ void mos6502::IRQ()
 		StackPush(pc & 0xFF);
 		StackPush((status & ~BREAK) | CONSTANT);
 		SET_INTERRUPT(1);
-		pc = (Read(irqVectorH) << 8) + Read(irqVectorL);
+
+		// load PC from reset vector
+		uint8_t pcl = Read(irqVectorL);
+		uint8_t pch = Read(irqVectorH);
+		pc = (pch << 8) + pcl;
 	}
 	return;
 }
@@ -869,7 +876,11 @@ void mos6502::NMI()
 	StackPush(pc & 0xFF);
 	StackPush((status & ~BREAK) | CONSTANT);
 	SET_INTERRUPT(1);
-	pc = (Read(nmiVectorH) << 8) + Read(nmiVectorL);
+
+	// load PC from reset vector
+	uint8_t pcl = Read(nmiVectorL);
+	uint8_t pch = Read(nmiVectorH);
+	pc = (pch << 8) + pcl;
 	return;
 }
 
