@@ -1,5 +1,6 @@
 #include "mos6502.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
 
@@ -108,11 +109,59 @@ static const uint8_t rom[] = {
 	0x00, 0x00, 0x00, 0x0F, 0x00, 0xFF, 0x00, 0x00,
 };
 
-int main()
+int main(int argc, char* argv[])
 {
+	// Usage:
+	// apple1
+	// 		start WOZ Monitor.
+	// apple1 <file>
+	// 		preload a binary file into 0x1000.
+	// apple1 <file> <address>
+	// 		preload a binary file into specified address.
+	// command line arguments after <address> are ignored.
+	// if the file is longer than (0xffff - address), the
+	// emulator may crash.
+	// if [address, file length] overlaps with [0xff00,
+	// 0xffff], the overlapped part is overwritten by
+	// WOZ Monitor binary.
+
 	mos6502 mos(read, write);
+		
+	// preload binary data into memory.
+	if (argc >= 2)
+	{
+		FILE* f = fopen(argv[1], "rb");
+		if (f == NULL)
+		{
+			printf("failed to open file: %s\n", argv[1]);
+			return -1;
+		}
+
+		fseek(f, 0, SEEK_END);
+		int len = ftell(f);
+		fseek(f, 0, SEEK_SET);
+
+		void* buf = malloc(len);
+		fread(buf, 1, len, f);
+
+		int start = 0x1000;
+		if (argc >= 3)
+		{
+			char* ptr;
+			start = strtoll(argv[2], &ptr, 0);
+			if (ptr == argv[2] || start < 0 || start > 0xffff)
+			{
+				printf("invalid destination address\n");
+			}
+		}
+
+		memcpy(&mem[start], buf, len);
+		free(buf);
+	}
+
 	// copy WOZ Monitor into ROM area.
 	memcpy(&mem[0xff00], rom, 256);
+
 	mos.Reset(); // load reset vector into PC
 	mos.RunEternally();
 }
