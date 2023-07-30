@@ -10,6 +10,24 @@
 #include <conio.h>
 #endif
 
+#include <thread>
+#include <chrono>
+
+// keyboard emulation, multithreading is needed.
+// if multithreading is not used, a1basic.bin
+// will abnormally stop when it meets goto
+// statement.
+static int kbdchar = 0;
+static bool kbdready = false;
+static void keyboard()
+{
+	while(true)
+	{
+		kbdchar = getch();
+		kbdready = true;
+	}
+}
+
 // 64kb memory
 static uint8_t mem[65536];
 
@@ -21,18 +39,21 @@ static uint8_t mem[65536];
 #define DSP 0xD012
 #define DSPCR 0xD013
 
-uint8_t read(uint16_t addr)
+static uint8_t read(uint16_t addr)
 {
 	if (addr == KBD)
 	{
-		return toupper(getch()) | 0x80; // always set b7. it's required
+		kbdready = false;
+		return toupper(kbdchar) | 0x80; // always set b7. it's required
 										// by WOZ Monitor.
 	}
 	else if (addr == KBDCR)
 	{
-		return 0x80; // b7 of KBDCR indicates if a key is available
-					 // to be read. it's always ready(set) in this
-					 // emulator.
+		// sleep for 1 millisecond. or the dead loop in WOZ Monitor
+		// eats up cpu.
+		std::this_thread::sleep_for(std::chrono::milliseconds(1));
+		return kbdready ? 0x80 : 0x00; // b7 is set when keyboard is
+									   // ready
 	}
 	else if (addr == DSP)
 	{
@@ -46,7 +67,7 @@ uint8_t read(uint16_t addr)
 	}
 }
 
-void write(uint16_t addr, uint8_t value)
+static void write(uint16_t addr, uint8_t value)
 {
 	if (addr == KBD)
 	{
@@ -60,7 +81,7 @@ void write(uint16_t addr, uint8_t value)
 	{
 		int v = toupper(value & 0x7F); // clear b7. it is ignored.
 		putchar(v == '\r' ? '\n' : v); // WOZ Monitor uses \r as
-									   // newline, convert it.
+									   // newline. convert it.
 	}
 	else if (addr >= 0xFF00)
 	{
@@ -118,12 +139,10 @@ int main(int argc, char* argv[])
 	// 		preload a binary file into 0x1000.
 	// apple1 <file> <address>
 	// 		preload a binary file into specified address.
+	//		the address should be a C integer literal.
+	//		decimal, hexdecimal and octal are supported,
+	//		while binary is not.
 	// command line arguments after <address> are ignored.
-	// if the file is longer than (0xffff - address), the
-	// emulator may crash.
-	// if [address, file length] overlaps with [0xff00,
-	// 0xffff], the overlapped part is overwritten by
-	// WOZ Monitor binary.
 
 	mos6502 mos(read, write);
 		
@@ -149,9 +168,13 @@ int main(int argc, char* argv[])
 		{
 			char* ptr;
 			start = strtoll(argv[2], &ptr, 0);
-			if (ptr == argv[2] || start < 0 || start > 0xffff)
+			if (ptr == argv[2] // failed to parse
+				|| start < 0 // bad address
+				|| start > 0xff00 // overlaps with ROM
+				|| (start+len) > 0xff00)
 			{
 				printf("invalid destination address\n");
+				return -1;
 			}
 		}
 
@@ -162,6 +185,11 @@ int main(int argc, char* argv[])
 	// copy WOZ Monitor into ROM area.
 	memcpy(&mem[0xff00], rom, 256);
 
+	// start keyboard emulation
+	std::thread(keyboard).detach();
+
 	mos.Reset(); // load reset vector into PC
 	mos.RunEternally();
+
+	return 0;
 }

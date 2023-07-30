@@ -1,4 +1,3 @@
-
 #include "mos6502.h"
 
 mos6502::mos6502(BusRead r, BusWrite w)
