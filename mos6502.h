@@ -8,9 +8,7 @@
 
 #pragma once
 
-#include <iostream>
 #include <stdint.h>
-using namespace std;
 
 #define NEGATIVE  0x80
 #define OVERFLOW  0x40
