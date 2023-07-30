@@ -909,6 +909,24 @@ void mos6502::Run(
 	}
 }
 
+void mos6502::RunEternally()
+{
+	uint8_t opcode;
+	Instr instr;
+
+	while(!illegalOpcode)
+	{
+		// fetch
+		opcode = Read(pc++);
+
+		// decode
+		instr = InstrTable[opcode];
+
+		// execute
+		Exec(instr);
+	}
+}
+
 void mos6502::Exec(Instr i)
 {
 	uint16_t src = (this->*i.addr)();

@@ -197,6 +197,10 @@ public:
 		int32_t cycles,
 		uint64_t& cycleCount,
 		CycleMethod cycleMethod = CYCLE_COUNT);
+	void RunEternally(); // until it encounters a illegal opcode
+						 // useful when running e.g. MOS Monitor
+						 // no need to worry about cycle exhaus-
+						 // tion
     uint16_t GetPC();
     uint8_t GetS();
     uint8_t GetP();
