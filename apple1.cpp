@@ -65,7 +65,7 @@ void write(uint16_t addr, uint8_t value)
 	else if (addr >= 0xFF00)
 	{
 		// do nothing. this is where WOZ Monitor is located.
-		// it ROM, so unmodifiable.
+		// it is ROM, so unmodifiable.
 	}
 	else
 	{
