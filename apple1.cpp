@@ -12,22 +12,18 @@
 
 #include <thread>
 #include <chrono>
+#include <queue>
 
 // keyboard emulation, multithreading is needed.
 // if multithreading is not used, a1basic.bin
 // will abnormally stop when it meets goto
 // statement.
-static int kbdchar = 0;
-static bool volatile kbdready = false;
+static std::queue<char> kbdbuf;
 static void keyboard()
 {
 	while(true)
 	{
-		while(kbdready); // wait for WOZ Monitor to process the key
-						 // this won't take much time or cpu.
-						 // kbdready must be volatile.
-		kbdchar = getch();
-		kbdready = true;
+		kbdbuf.push(getch());
 	}
 }
 
@@ -46,19 +42,25 @@ static uint8_t read(uint16_t addr)
 {
 	if (addr == KBD)
 	{
-		uint8_t value = kbdchar;
-		kbdready = false; // set to false after retrieving the key
-						  // or the currnt key may be overwritten.
+		char value = kbdbuf.front();
+		kbdbuf.pop();
 		return toupper(value) | 0x80; // always set b7. it's required
 									  // by WOZ Monitor.
 	}
 	else if (addr == KBDCR)
 	{
-		// sleep for 1 millisecond. or the dead loop in WOZ Monitor
-		// eats up cpu.
-		std::this_thread::sleep_for(std::chrono::milliseconds(1));
-		return kbdready ? 0x80 : 0x00; // b7 is set when keyboard is
-									   // ready
+		// sleep only if the buffer is empty to speed up emulation
+		if (kbdbuf.empty())
+		{
+			// sleep for 1 millisecond. or the dead loop in WOZ Monitor
+			// eats up cpu.
+			std::this_thread::sleep_for(std::chrono::milliseconds(1));
+			return 0x00;
+		}
+		else
+		{
+			return 0x80; // set b7 of KBDCR when keyboard is ready.
+		}
 	}
 	else if (addr == DSP)
 	{
