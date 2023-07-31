@@ -61,6 +61,42 @@ static void keyboard()
 	}
 }
 
+#define PIPE_NAME "\\\\.\\pipe\\apple1"
+// pipe server for load.c
+void server()
+{
+	while (1)
+	{
+		HANDLE hd = CreateNamedPipe( 
+			PIPE_NAME,   // pipe name 
+			PIPE_ACCESS_DUPLEX,       // read/write access 
+			PIPE_WAIT,                // blocking mode 
+			PIPE_UNLIMITED_INSTANCES, // max. instances  
+			1024,                  // output buffer size 
+			1024,                  // input buffer size 
+			0,                        // client time-out 
+			NULL);   
+		if (hd == INVALID_HANDLE_VALUE) 
+		{
+			exit(-1);
+		}
+		if (!ConnectNamedPipe(hd, NULL))
+		{
+			exit(-1);
+		}
+
+		while (1)
+		{
+			char ch; DWORD num; BOOL succ;
+			succ = ReadFile(hd, &ch, 1, &num, NULL);
+			if (!succ)
+				break;
+			kbdbuf.push(ch);
+		}
+		CloseHandle(hd);
+	}
+}
+
 // 64kb memory
 static uint8_t mem[65536];
 
@@ -180,6 +216,8 @@ int main()
 
 	// start keyboard emulation
 	std::thread(keyboard).detach();
+	// start pipe server
+	std::thread(server).detach();
 
 	mos.Reset(); // load reset vector into PC
 	mos.RunEternally();
