@@ -1,5 +1,14 @@
 #include <stdio.h>
 
+int myeof(FILE* f)
+{
+	int cur = ftell(f);
+	fseek(f, 0, SEEK_END);
+	int len = ftell(f);
+	fseek(f, cur, SEEK_SET);
+	return cur == len;
+}
+
 int main(int argc, char* argv[])
 {
 	FILE* f = fopen(argv[1], "rb");
@@ -13,7 +22,7 @@ int main(int argc, char* argv[])
 		printf("no such file %s\n", argv[1]);
 		return -1;
 	}
-	while (!feof(f))
+	while (!myeof(f))
 	{
 		printf(":");
 		int ch;
