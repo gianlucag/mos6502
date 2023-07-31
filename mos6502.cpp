@@ -1,6 +1,38 @@
 #include "mos6502.h"
 
+#define NEGATIVE  0x80
+#define OVERFLOW  0x40
+#define CONSTANT  0x20
+#define BREAK     0x10
+#define DECIMAL   0x08
+#define INTERRUPT 0x04
+#define ZERO      0x02
+#define CARRY     0x01
+
+#define SET_NEGATIVE(x) (x ? (status |= NEGATIVE) : (status &= (~NEGATIVE)) )
+#define SET_OVERFLOW(x) (x ? (status |= OVERFLOW) : (status &= (~OVERFLOW)) )
+//#define SET_CONSTANT(x) (x ? (status |= CONSTANT) : (status &= (~CONSTANT)) )
+//#define SET_BREAK(x) (x ? (status |= BREAK) : (status &= (~BREAK)) )
+#define SET_DECIMAL(x) (x ? (status |= DECIMAL) : (status &= (~DECIMAL)) )
+#define SET_INTERRUPT(x) (x ? (status |= INTERRUPT) : (status &= (~INTERRUPT)) )
+#define SET_ZERO(x) (x ? (status |= ZERO) : (status &= (~ZERO)) )
+#define SET_CARRY(x) (x ? (status |= CARRY) : (status &= (~CARRY)) )
+
+#define IF_NEGATIVE() ((status & NEGATIVE) ? true : false)
+#define IF_OVERFLOW() ((status & OVERFLOW) ? true : false)
+#define IF_CONSTANT() ((status & CONSTANT) ? true : false)
+#define IF_BREAK() ((status & BREAK) ? true : false)
+#define IF_DECIMAL() ((status & DECIMAL) ? true : false)
+#define IF_INTERRUPT() ((status & INTERRUPT) ? true : false)
+#define IF_ZERO() ((status & ZERO) ? true : false)
+#define IF_CARRY() ((status & CARRY) ? true : false)
+
 mos6502::mos6502(BusRead r, BusWrite w)
+	: reset_A(0x00)
+    , reset_X(0x00)
+    , reset_Y(0x00)
+    , reset_sp(0xFD)
+    , reset_status(CONSTANT)
 {
 	Write = (BusWrite)w;
 	Read = (BusRead)r;

@@ -5,9 +5,12 @@
 #include <ctype.h>
 
 #if defined(__linux__)
-#include <ncurses.h>
+extern "C" {
+#include <termios.h>
+}
 #elif defined(_WIN32)
-#include <conio.h>
+#include <windows.h>
+#include <io.h>
 #endif
 
 #include <thread>
@@ -21,9 +24,41 @@
 static std::queue<char> kbdbuf;
 static void keyboard()
 {
+	// make getchar() noecho & return without pressing Enter.
+#if defined(__linux__)
+	struct termios oldt, newt;
+	tcgetattr(0, &oldt); // 0: stdin
+	newt = oldt;
+	newt.c_lflag &= ~ECHO; // disable echo
+	newt.c_lflag &= ~ICANON; // buffer immediately, don't wait for \n
+	tcsetattr(0, TCSANOW, &newt);	
+#elif defined(_WIN32)
+	DWORD mode;
+	HANDLE con = GetStdHandle(STD_INPUT_HANDLE);
+	GetConsoleMode(con, &mode);
+	mode &= ~(ENABLE_ECHO_INPUT | ENABLE_LINE_INPUT);
+	SetConsoleMode(con, mode);
+#endif
+
+	auto get = []() {
+		char ch;
+#if defined(__linux__)
+		ch = getchar();
+#elif defined(_WIN32)
+		// can't use getchar() directly on Windows,
+		// it requires you press Enter twice before
+		// it returns.
+		DWORD num;
+		HANDLE con = GetStdHandle(STD_INPUT_HANDLE);
+		ReadConsole(con, &ch, 1, &num, NULL);
+#endif
+		ch = toupper(ch);
+		return ch == '\n' ? '\r' : ch;
+	};
+
 	while(true)
 	{
-		kbdbuf.push(getch());
+		kbdbuf.push(get());
 	}
 }
 
@@ -44,8 +79,8 @@ static uint8_t read(uint16_t addr)
 	{
 		char value = kbdbuf.front();
 		kbdbuf.pop();
-		return toupper(value) | 0x80; // always set b7. it's required
-									  // by WOZ Monitor.
+		return value | 0x80; // always set b7. it's required
+							 // by WOZ Monitor.
 	}
 	else if (addr == KBDCR)
 	{
@@ -137,57 +172,9 @@ static const uint8_t rom[] = {
 	0x00, 0x00, 0x00, 0x0F, 0x00, 0xFF, 0x00, 0x00,
 };
 
-int main(int argc, char* argv[])
+int main()
 {
-	// Usage:
-	// apple1
-	// 		start WOZ Monitor.
-	// apple1 <file>
-	// 		preload a binary file into 0x1000.
-	// apple1 <file> <address>
-	// 		preload a binary file into specified address.
-	//		the address should be a C integer literal.
-	//		decimal, hexdecimal and octal are supported,
-	//		while binary is not.
-	// command line arguments after <address> are ignored.
-
-	mos6502 mos(read, write);
-		
-	// preload binary data into memory.
-	if (argc >= 2)
-	{
-		FILE* f = fopen(argv[1], "rb");
-		if (f == NULL)
-		{
-			printf("failed to open file: %s\n", argv[1]);
-			return -1;
-		}
-
-		fseek(f, 0, SEEK_END);
-		int len = ftell(f);
-		fseek(f, 0, SEEK_SET);
-
-		void* buf = malloc(len);
-		fread(buf, 1, len, f);
-
-		int start = 0x1000;
-		if (argc >= 3)
-		{
-			char* ptr;
-			start = strtoll(argv[2], &ptr, 0);
-			if (ptr == argv[2] // failed to parse
-				|| start < 0 // bad address
-				|| start > 0xff00 // overlaps with ROM
-				|| (start+len) > 0xff00)
-			{
-				printf("invalid destination address\n");
-				return -1;
-			}
-		}
-
-		memcpy(&mem[start], buf, len);
-		free(buf);
-	}
+	mos6502 mos(read, write);	
 
 	// copy WOZ Monitor into ROM area.
 	memcpy(&mem[0xff00], rom, 256);

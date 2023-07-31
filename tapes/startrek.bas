@@ -1,5 +1,7 @@
-REM Startrek source, from https://github.com/whscullin/apple1js/blob/main/tapes/startrek.js
-REM Set low memory bound 
+REM ***THIS IS NOT A COMMAND LINE FILE***
+REM ***THIS IS A BASIC PROGRAM SOURCE***
+REM This is a 'decompilation'(by list command) of startrek.txt
+REM Set low memory bound
 LOMEM=(2048)
 REM Set high memory bound
 HIMEM=(10240)
