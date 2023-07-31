@@ -18,11 +18,14 @@
 // will abnormally stop when it meets goto
 // statement.
 static int kbdchar = 0;
-static bool kbdready = false;
+static bool volatile kbdready = false;
 static void keyboard()
 {
 	while(true)
 	{
+		while(kbdready); // wait for WOZ Monitor to process the key
+						 // this won't take much time or cpu.
+						 // kbdready must be volatile.
 		kbdchar = getch();
 		kbdready = true;
 	}
@@ -43,9 +46,11 @@ static uint8_t read(uint16_t addr)
 {
 	if (addr == KBD)
 	{
-		kbdready = false;
-		return toupper(kbdchar) | 0x80; // always set b7. it's required
-										// by WOZ Monitor.
+		uint8_t value = kbdchar;
+		kbdready = false; // set to false after retrieving the key
+						  // or the currnt key may be overwritten.
+		return toupper(value) | 0x80; // always set b7. it's required
+									  // by WOZ Monitor.
 	}
 	else if (addr == KBDCR)
 	{
