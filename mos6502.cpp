@@ -27,6 +27,8 @@
 #define IF_ZERO() ((status & ZERO) ? true : false)
 #define IF_CARRY() ((status & CARRY) ? true : false)
 
+mos6502::Instr mos6502::InstrTable[256];
+
 mos6502::mos6502(BusRead r, BusWrite w)
 	: reset_A(0x00)
     , reset_X(0x00)
@@ -36,8 +38,12 @@ mos6502::mos6502(BusRead r, BusWrite w)
 {
 	Write = (BusWrite)w;
 	Read = (BusRead)r;
-	Instr instr;
 
+	static bool initialized = false;
+	if (initialized) return;
+	initialized = true;
+
+	Instr instr;
 	// fill jump table with ILLEGALs
 	instr.addr = &mos6502::Addr_IMP;
 	instr.code = &mos6502::Op_ILLEGAL;

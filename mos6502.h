@@ -43,7 +43,7 @@ private:
 		uint8_t cycles;
 	};
 
-	Instr InstrTable[256];
+	static Instr InstrTable[256];
 
 	void Exec(Instr i);
 
@@ -166,7 +166,7 @@ public:
 		uint64_t& cycleCount,
 		CycleMethod cycleMethod = CYCLE_COUNT);
 	void RunEternally(); // until it encounters a illegal opcode
-						 // useful when running e.g. MOS Monitor
+						 // useful when running e.g. WOZ Monitor
 						 // no need to worry about cycle exhaus-
 						 // tion
     uint16_t GetPC();
