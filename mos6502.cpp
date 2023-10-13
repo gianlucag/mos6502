@@ -791,13 +791,13 @@ uint16_t mos6502::Addr_ABI()
 
 uint16_t mos6502::Addr_ZEX()
 {
-	uint16_t addr = (Read(pc++) + X) % 256;
+	uint16_t addr = (Read(pc++) + X) & 0xFF;
 	return addr;
 }
 
 uint16_t mos6502::Addr_ZEY()
 {
-	uint16_t addr = (Read(pc++) + Y) % 256;
+	uint16_t addr = (Read(pc++) + Y) & 0xFF;
 	return addr;
 }
 
@@ -834,8 +834,8 @@ uint16_t mos6502::Addr_INX()
 	uint16_t zeroH;
 	uint16_t addr;
 
-	zeroL = (Read(pc++) + X) % 256;
-	zeroH = (zeroL + 1) % 256;
+	zeroL = (Read(pc++) + X) & 0xFF;
+	zeroH = (zeroL + 1) & 0xFF;
 	addr = Read(zeroL) + (Read(zeroH) << 8);
 
 	return addr;
@@ -848,7 +848,7 @@ uint16_t mos6502::Addr_INY()
 	uint16_t addr;
 
 	zeroL = Read(pc++);
-	zeroH = (zeroL + 1) % 256;
+	zeroH = (zeroL + 1) & 0xFF;
 	addr = Read(zeroL) + (Read(zeroH) << 8) + Y;
 
 	return addr;
@@ -1268,7 +1268,7 @@ void mos6502::Op_CPY(uint16_t src)
 void mos6502::Op_DEC(uint16_t src)
 {
 	uint8_t m = Read(src);
-	m = (m - 1) % 256;
+	m = (m - 1) & 0xFF;
 	SET_NEGATIVE(m & 0x80);
 	SET_ZERO(!m);
 	Write(src, m);
@@ -1278,7 +1278,7 @@ void mos6502::Op_DEC(uint16_t src)
 void mos6502::Op_DEX(uint16_t src)
 {
 	uint8_t m = X;
-	m = (m - 1) % 256;
+	m = (m - 1) & 0xFF;
 	SET_NEGATIVE(m & 0x80);
 	SET_ZERO(!m);
 	X = m;
@@ -1288,7 +1288,7 @@ void mos6502::Op_DEX(uint16_t src)
 void mos6502::Op_DEY(uint16_t src)
 {
 	uint8_t m = Y;
-	m = (m - 1) % 256;
+	m = (m - 1) & 0xFF;
 	SET_NEGATIVE(m & 0x80);
 	SET_ZERO(!m);
 	Y = m;
@@ -1307,7 +1307,7 @@ void mos6502::Op_EOR(uint16_t src)
 void mos6502::Op_INC(uint16_t src)
 {
 	uint8_t m = Read(src);
-	m = (m + 1) % 256;
+	m = (m + 1) & 0xFF;
 	SET_NEGATIVE(m & 0x80);
 	SET_ZERO(!m);
 	Write(src, m);
@@ -1316,7 +1316,7 @@ void mos6502::Op_INC(uint16_t src)
 void mos6502::Op_INX(uint16_t src)
 {
 	uint8_t m = X;
-	m = (m + 1) % 256;
+	m = (m + 1) & 0xFF;
 	SET_NEGATIVE(m & 0x80);
 	SET_ZERO(!m);
 	X = m;
@@ -1325,7 +1325,7 @@ void mos6502::Op_INX(uint16_t src)
 void mos6502::Op_INY(uint16_t src)
 {
 	uint8_t m = Y;
-	m = (m + 1) % 256;
+	m = (m + 1) & 0xFF;
 	SET_NEGATIVE(m & 0x80);
 	SET_ZERO(!m);
 	Y = m;
