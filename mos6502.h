@@ -142,11 +142,13 @@ private:
 	static const uint16_t nmiVectorH = 0xFFFB;
 	static const uint16_t nmiVectorL = 0xFFFA;
 
-	// read/write callbacks
+	// read/write/clock-cycle callbacks
 	typedef void (*BusWrite)(uint16_t, uint8_t);
 	typedef uint8_t (*BusRead)(uint16_t);
+    typedef void (*ClockCycle)(mos6502*);
 	BusRead Read;
 	BusWrite Write;
+    ClockCycle Cycle;
 
 	// stack operations
 	inline void StackPush(uint8_t byte);
@@ -157,7 +159,7 @@ public:
 		INST_COUNT,
 		CYCLE_COUNT,
 	};
-	mos6502(BusRead r, BusWrite w);
+	mos6502(BusRead r, BusWrite w, ClockCycle c = nullptr);
 	void NMI();
 	void IRQ();
 	void Reset();
