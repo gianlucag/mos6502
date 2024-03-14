@@ -899,7 +899,7 @@ void mos6502::IRQ()
 		StackPush((status & ~BREAK) | CONSTANT);
 		SET_INTERRUPT(1);
 
-		// load PC from reset vector
+		// load PC from interrupt request vector
 		uint8_t pcl = Read(irqVectorL);
 		uint8_t pch = Read(irqVectorH);
 		pc = (pch << 8) + pcl;
@@ -915,7 +915,7 @@ void mos6502::NMI()
 	StackPush((status & ~BREAK) | CONSTANT);
 	SET_INTERRUPT(1);
 
-	// load PC from reset vector
+	// load PC from non-maskable interrupt vector
 	uint8_t pcl = Read(nmiVectorL);
 	uint8_t pch = Read(nmiVectorH);
 	pc = (pch << 8) + pcl;
