@@ -145,10 +145,10 @@ private:
 	// read/write/clock-cycle callbacks
 	typedef void (*BusWrite)(uint16_t, uint8_t);
 	typedef uint8_t (*BusRead)(uint16_t);
-    typedef void (*ClockCycle)(mos6502*);
+	typedef void (*ClockCycle)(mos6502*);
 	BusRead Read;
 	BusWrite Write;
-    ClockCycle Cycle;
+	ClockCycle Cycle;
 
 	// stack operations
 	inline void StackPush(uint8_t byte);

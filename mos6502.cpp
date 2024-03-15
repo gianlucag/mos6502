@@ -38,7 +38,7 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 {
 	Write = (BusWrite)w;
 	Read = (BusRead)r;
-    Cycle = (ClockCycle)c;
+	Cycle = (ClockCycle)c;
 
 	static bool initialized = false;
 	if (initialized) return;
@@ -945,10 +945,10 @@ void mos6502::Run(
 			cycleMethod == CYCLE_COUNT        ? instr.cycles
 			/* cycleMethod == INST_COUNT */   : 1;
 
-        // run clock cycle callback
-        if (Cycle)
-            for(int i = 0; i < instr.cycles; i++)
-                Cycle(this);
+		// run clock cycle callback
+		if (Cycle)
+			for(int i = 0; i < instr.cycles; i++)
+				Cycle(this);
 	}
 }
 
@@ -968,10 +968,10 @@ void mos6502::RunEternally()
 		// execute
 		Exec(instr);
 
-        // run clock cycle callback
-        if (Cycle)
-            for(int i = 0; i < instr.cycles; i++)
-                Cycle(this);
+		// run clock cycle callback
+		if (Cycle)
+			for(int i = 0; i < instr.cycles; i++)
+				Cycle(this);
 	}
 }
 
