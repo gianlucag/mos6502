@@ -29,7 +29,7 @@
 
 mos6502::Instr mos6502::InstrTable[256];
 
-mos6502::mos6502(BusRead r, BusWrite w)
+mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 	: reset_A(0x00)
     , reset_X(0x00)
     , reset_Y(0x00)
@@ -38,6 +38,7 @@ mos6502::mos6502(BusRead r, BusWrite w)
 {
 	Write = (BusWrite)w;
 	Read = (BusRead)r;
+	Cycle = (ClockCycle)c;
 
 	static bool initialized = false;
 	if (initialized) return;
@@ -898,7 +899,7 @@ void mos6502::IRQ()
 		StackPush((status & ~BREAK) | CONSTANT);
 		SET_INTERRUPT(1);
 
-		// load PC from reset vector
+		// load PC from interrupt request vector
 		uint8_t pcl = Read(irqVectorL);
 		uint8_t pch = Read(irqVectorH);
 		pc = (pch << 8) + pcl;
@@ -914,7 +915,7 @@ void mos6502::NMI()
 	StackPush((status & ~BREAK) | CONSTANT);
 	SET_INTERRUPT(1);
 
-	// load PC from reset vector
+	// load PC from non-maskable interrupt vector
 	uint8_t pcl = Read(nmiVectorL);
 	uint8_t pch = Read(nmiVectorH);
 	pc = (pch << 8) + pcl;
@@ -943,6 +944,11 @@ void mos6502::Run(
 		cyclesRemaining -=
 			cycleMethod == CYCLE_COUNT        ? instr.cycles
 			/* cycleMethod == INST_COUNT */   : 1;
+
+		// run clock cycle callback
+		if (Cycle)
+			for(int i = 0; i < instr.cycles; i++)
+				Cycle(this);
 	}
 }
 
@@ -961,6 +967,11 @@ void mos6502::RunEternally()
 
 		// execute
 		Exec(instr);
+
+		// run clock cycle callback
+		if (Cycle)
+			for(int i = 0; i < instr.cycles; i++)
+				Cycle(this);
 	}
 }
 
