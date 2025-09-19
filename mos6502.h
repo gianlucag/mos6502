@@ -19,20 +19,6 @@ private:
     uint8_t reset_sp;
     uint8_t reset_status;
 
-	// registers
-	uint8_t A; // accumulator
-	uint8_t X; // X-index
-	uint8_t Y; // Y-index
-
-	// stack pointer
-	uint8_t sp;
-
-	// program counter
-	uint16_t pc;
-
-	// status register
-	uint8_t status;
-
 	typedef void (mos6502::*CodeExec)(uint16_t);
 	typedef uint16_t (mos6502::*AddrExec)();
 
@@ -46,8 +32,6 @@ private:
 	static Instr InstrTable[256];
 
 	void Exec(Instr i);
-
-	bool illegalOpcode;
 
 	// addressing modes
 	uint16_t Addr_ACC(); // ACCUMULATOR
@@ -155,6 +139,16 @@ private:
 	inline uint8_t StackPop();
 
 public:
+	// registers
+	uint8_t A; // accumulator
+	uint8_t X; // X-index
+	uint8_t Y; // Y-index
+	uint8_t sp; // stack pointer
+	uint16_t pc; // program counter
+	uint8_t status; // flags
+	
+	bool illegalOpcode;
+	
 	enum CycleMethod {
 		INST_COUNT,
 		CYCLE_COUNT,
