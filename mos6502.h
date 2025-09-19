@@ -18,6 +18,8 @@ private:
     uint8_t reset_Y;
     uint8_t reset_sp;
     uint8_t reset_status;
+	
+	int cycleTimer = 0;
 
 	typedef void (mos6502::*CodeExec)(uint16_t);
 	typedef uint16_t (mos6502::*AddrExec)();

@@ -47,6 +47,7 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 	Instr instr;
 	// fill jump table with ILLEGALs
 	instr.addr = &mos6502::Addr_IMP;
+	instr.cycles = 3;
 	instr.code = &mos6502::Op_ILLEGAL;
 	for(int i = 0; i < 256; i++)
 	{
@@ -932,6 +933,11 @@ void mos6502::Run(
 
 	while(cyclesRemaining > 0 && !illegalOpcode)
 	{
+		if (cycleTimer > 0) {
+			cycleTimer--;
+			cyclesRemaining--;
+			continue;
+		}
 		// fetch
 		opcode = Read(pc++);
 
@@ -950,6 +956,8 @@ void mos6502::Run(
 			for(int i = 0; i < instr.cycles; i++)
 				Cycle(this);
 	}
+
+	cycleTimer += -cyclesRemaining;
 }
 
 void mos6502::RunEternally()
