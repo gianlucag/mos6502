@@ -30,9 +30,4 @@ if [ ! -d "6502_65C02_functional_tests/as65_142" ]; then
     )
 fi
 
-if [[ ! -x ./main ]]; then
-    echo "Executable 'main' not found — building..."
-    g++ -o main ../mos6502.cpp main.cpp || { echo "Error: g++ build failed"; exit 1; }
-else
-    echo "'main' already exists — skipping build."
-fi
+make main
