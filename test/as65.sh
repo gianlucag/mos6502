@@ -10,7 +10,7 @@ dest_dir="6502_65C02_functional_tests/as65_142"
 [[ -f "$src_file" ]] || { echo "Error: $src_file not found"; exit 1; }
 [[ -d "$dest_dir" ]] || { echo "Error: $dest_dir not found"; exit 1; }
 
-# ---- NEW: collision check (case-insensitive) ----
+# ---- Collision check (case-insensitive) ----
 shopt -s nullglob
 declare -a collisions=()
 check_fn_lc="$(basename "$src_file")"
@@ -23,8 +23,6 @@ for f in "$dest_dir"/*; do
     bn_lc="${bn,,}"
     name="${bn%.*}"
     name_lc="${name,,}"
-    # collision if either the full filename matches (case-insensitive) OR
-    # any artifact shares the same basename (case-insensitive)
     if [[ "$bn_lc" == "$check_fn_lc" || "$name_lc" == "$check_base_lc" ]]; then
         collisions+=("$bn")
     fi
@@ -36,7 +34,6 @@ if (( ${#collisions[@]} > 0 )); then
     echo "Refusing to copy to avoid overwriting existing files." >&2
     exit 1
 fi
-# ---- end NEW ----
 
 echo "Copying $src_file to $dest_dir"
 cp "$src_file" "$dest_dir/" || { echo "Copy failed"; exit 1; }
@@ -48,7 +45,7 @@ cp "$src_file" "$dest_dir/" || { echo "Copy failed"; exit 1; }
          -c "c:" \
          -c "cd as65_142" \
          -c "AS65-DOS.EXE -x1 -o${base_name}.hex -l${base_name}.lst -s2 -c -i -t -u -z $(basename "$src_file")" \
-         -c "echo." -c "pause"
+         -c "exit" # change that "exit" to a "pause" if you need to debug
 ) || { echo "Assembler failed"; exit 1; }
 
 # ---- Artifact move block ----
