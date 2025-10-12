@@ -2,10 +2,12 @@
 
 #include "../mos6502.h"
 
+#include <stdlib.h>
+#include <stdio.h>
 #include <stddef.h>
 #include <stdint.h>
 
-uint8_t ram[65536];
+uint8_t ram[65536] = {0};
 
 mos6502 *cpu = NULL;
 
@@ -17,7 +19,81 @@ uint8_t readRam(uint16_t addr) {
    return ram[addr];
 }
 
+void tick(mos6502*) {
+   printf("PC=%04x\r", cpu->GetPC());
+}
+
+void bail(const char *s) {
+   fprintf(stderr, "%s\n", s);
+   exit(-1);
+}
+
+uint32_t fetch(const char *s, uint16_t offset, uint8_t count) {
+   uint32_t ret = 0;
+   uint32_t val;
+   for (int i = 0; i < count; i++) {
+      ret <<= 4;
+      if (s[offset + i] <= '9') {
+         val = s[offset + i] - '0';
+      }
+      else if (s[offset + i] <= 'F') {
+         val = s[offset + i] - 'A' + 10;
+      }
+      else if (s[offset + i] <= 'f') {
+         val = s[offset + i] - 'a' + 10;
+      }
+      ret |= val;
+   }
+   return ret;
+}
+
+void handle_hex(const char *fname) {
+   char buf[1024];
+   FILE *f = fopen(fname, "r");
+   if (!f) {
+      bail("could not open hex file");
+   }
+   while (NULL != fgets(buf, sizeof(buf), f)) {
+      if (buf[0] != ':') {
+         bail("unexpected start code in hex file");
+      }
+
+      // TODO FIX verify checksum for line here!
+
+      int length = fetch(buf, 1, 2);
+      int address = fetch(buf, 3, 4);
+      int record = fetch(buf, 7, 2);
+      if (record == 0x00) {
+         for (int i = 0; i < length; i++) {
+            ram[address + i] = fetch(buf, 9 + 2 * i, 2);
+         }
+      }
+      else if (record == 0x01) {
+         // do nothing
+      }
+      else {
+         bail("unexpected record type in hex file");
+      }
+   }
+   fclose(f);
+}
+
 int main(int argc, char **argv) {
-   cpu = new mos6502(readRam, writeRam);
+   if (argc != 3) {
+      fprintf(stderr, "Usage: %s <file>.hex <start>\n", argv[0]);
+      return -1;
+   }
+
+   handle_hex(argv[1]);
+   int start = strtoul(argv[2], NULL, 0);
+
+   printf("start=%04X\n", start);
+   ram[0xFFFC] = start & 0xFF;
+   ram[0xFFFD] = start >> 8;
+
+   cpu = new mos6502(readRam, writeRam, tick);
+   cpu->Reset();
    cpu->RunEternally();
+
+   return 0;
 }
