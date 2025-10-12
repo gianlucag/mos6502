@@ -1,4 +1,5 @@
 #!/bin/bash
+
 set -euo pipefail  # safer: also catches unset vars and failed pipes
 IFS=$'\n\t'        # good habit when set -u
 
@@ -20,7 +21,6 @@ if [ ! -d "6502_65C02_functional_tests" ]; then
     fi
 fi
 
-
 if [ ! -d "6502_65C02_functional_tests/as65_142" ]; then
     echo "Unpacking assembler..."
     mkdir -p 6502_65C02_functional_tests/as65_142
@@ -28,4 +28,11 @@ if [ ! -d "6502_65C02_functional_tests/as65_142" ]; then
         cd 6502_65C02_functional_tests/as65_142
         unzip ../as65_142.zip
     )
+fi
+
+if [[ ! -x ./main ]]; then
+    echo "Executable 'main' not found — building..."
+    g++ -o main ../mos6502.cpp main.cpp || { echo "Error: g++ build failed"; exit 1; }
+else
+    echo "'main' already exists — skipping build."
 fi
