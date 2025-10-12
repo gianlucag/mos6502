@@ -11,6 +11,9 @@ uint8_t ram[65536] = {0};
 
 mos6502 *cpu = NULL;
 
+int start = -1;
+int success = -1;
+
 void writeRam(uint16_t addr, uint8_t val) {
    ram[addr] = val;
 }
@@ -20,7 +23,25 @@ uint8_t readRam(uint16_t addr) {
 }
 
 void tick(mos6502*) {
-   printf("PC=%04x\r", cpu->GetPC());
+   static uint16_t lastpc = 0xFFFF;
+   static int count = 0;
+   uint16_t pc = cpu->GetPC();
+   printf("PC=%04x\r", pc);
+   if (pc == success) {
+      printf("\nsuccess\n");
+      exit(0);
+   }
+   if (pc == lastpc) {
+      count++;
+      if (count > 100) {
+         printf("\nFAIL\n");
+         exit(-1);
+      }
+   }
+   else {
+      count = 0;
+   }
+   lastpc = pc;
 }
 
 void bail(const char *s) {
@@ -79,13 +100,14 @@ void handle_hex(const char *fname) {
 }
 
 int main(int argc, char **argv) {
-   if (argc != 3) {
-      fprintf(stderr, "Usage: %s <file>.hex <start>\n", argv[0]);
+   if (argc != 4) {
+      fprintf(stderr, "Usage: %s <file>.hex <start> <success>\n", argv[0]);
       return -1;
    }
 
    handle_hex(argv[1]);
-   int start = strtoul(argv[2], NULL, 0);
+   start = strtoul(argv[2], NULL, 0);
+   success = strtoul(argv[3], NULL, 0);
 
    printf("start=%04X\n", start);
    ram[0xFFFC] = start & 0xFF;

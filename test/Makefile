@@ -37,4 +37,4 @@ ft.hex:
 
 6502_functional_test: main ft.hex
 	@echo "================ Running $@"
-	./main ft.hex 0x400
+	./main ft.hex 0x400 0x3469

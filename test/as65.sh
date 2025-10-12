@@ -44,7 +44,7 @@ cp "$src_file" "$dest_dir/" || { echo "Copy failed"; exit 1; }
   dosbox -c "mount c $(pwd)" \
          -c "c:" \
          -c "cd as65_142" \
-         -c "AS65-DOS.EXE -x1 -o${base_name}.hex -l${base_name}.lst -s2 -c -i -t -u -z $(basename "$src_file")" \
+         -c "AS65-DOS.EXE -x1 -o${base_name}.hex -l -m -s2 -w -h0 -c -i -t -u -z $(basename "$src_file")" \
          -c "exit" # change that "exit" to a "pause" if you need to debug
 ) || { echo "Assembler failed"; exit 1; }
 
