@@ -10,6 +10,34 @@ dest_dir="6502_65C02_functional_tests/as65_142"
 [[ -f "$src_file" ]] || { echo "Error: $src_file not found"; exit 1; }
 [[ -d "$dest_dir" ]] || { echo "Error: $dest_dir not found"; exit 1; }
 
+# ---- NEW: collision check (case-insensitive) ----
+shopt -s nullglob
+declare -a collisions=()
+check_fn_lc="$(basename "$src_file")"
+check_fn_lc="${check_fn_lc,,}"         # full filename (with extension), lowercased
+check_base_lc="${base_name,,}"         # basename (no extension), lowercased
+
+for f in "$dest_dir"/*; do
+    [[ -f "$f" ]] || continue
+    bn="$(basename "$f")"
+    bn_lc="${bn,,}"
+    name="${bn%.*}"
+    name_lc="${name,,}"
+    # collision if either the full filename matches (case-insensitive) OR
+    # any artifact shares the same basename (case-insensitive)
+    if [[ "$bn_lc" == "$check_fn_lc" || "$name_lc" == "$check_base_lc" ]]; then
+        collisions+=("$bn")
+    fi
+done
+shopt -u nullglob
+
+if (( ${#collisions[@]} > 0 )); then
+    echo "Error: collision(s) in '$dest_dir' (case-insensitive): ${collisions[*]}" >&2
+    echo "Refusing to copy to avoid overwriting existing files." >&2
+    exit 1
+fi
+# ---- end NEW ----
+
 echo "Copying $src_file to $dest_dir"
 cp "$src_file" "$dest_dir/" || { echo "Copy failed"; exit 1; }
 
@@ -23,28 +51,27 @@ cp "$src_file" "$dest_dir/" || { echo "Copy failed"; exit 1; }
          -c "echo." -c "pause"
 ) || { echo "Assembler failed"; exit 1; }
 
-# --- CHANGED BLOCK: copy artifacts back (handle UPPERCASE and 8.3 truncation) ---
-echo "Copying artifacts back to $src_dir with normalized names..."
+# ---- Artifact move block ----
+echo "Moving artifacts back to $src_dir with normalized names..."
 shopt -s nullglob
 found=0
-base_up="${base_name^^}"
-base_up8="${base_up:0:8}"
+src_base_lc="${base_name,,}"
 
 for f in "$dest_dir"/*; do
-    fn=$(basename "$f")
-    name="${fn%.*}"          # filename without extension
-    ext="${fn##*.}"          # extension (may already be upper)
-    name_up="${name^^}"
+    [[ -f "$f" ]] || continue
+    fn="$(basename "$f")"
+    name="${fn%.*}"           # basename without extension
+    ext="${fn##*.}"           # extension
+    name_lc="${name,,}"       # lowercased basename
 
-    # Match exact uppercase or 8.3-truncated uppercase
-    if [[ "$name_up" == "$base_up" || "$name_up" == "$base_up8" ]]; then
-        lc_ext="${ext,,}"
-        cp "$f" "$src_dir/${base_name}.${lc_ext}" || { echo "Failed to copy $fn"; exit 1; }
-        ((found++))
+    if [[ "$name_lc" == "$src_base_lc" ]]; then
+        echo "Moving $f → $src_dir/${base_name}.${ext,,}"
+        mv "$f" "$src_dir/${base_name}.${ext,,}" || { echo "Failed to move $fn"; exit 1; }
+        ((found++)) || true    # prevent 'set -e' from exiting since found++ returns old value (non-zero on later iterations)
     fi
 done
 shopt -u nullglob
 
-[[ $found -gt 0 ]] || { echo "No artifacts matching $base_name (or 8.3 form) found in $dest_dir" >&2; exit 1; }
+(( found > 0 )) || { echo "No artifacts for '$base_name' found in $dest_dir" >&2; exit 1; }
 
-echo "Success: copied $found artifact(s) to $src_dir"
+echo "Success: moved $found artifact(s) to $src_dir"
