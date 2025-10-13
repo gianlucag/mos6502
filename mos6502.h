@@ -13,6 +13,22 @@
 class mos6502
 {
 private:
+      // registers
+      uint8_t A; // accumulator
+      uint8_t X; // X-index
+      uint8_t Y; // Y-index
+
+      // stack pointer
+      uint8_t sp;
+
+      // program counter
+      uint16_t pc;
+
+      // status register
+      uint8_t status;
+	
+      bool illegalOpcode;
+	
       // register reset values
       uint8_t reset_A;
       uint8_t reset_X;
@@ -146,22 +162,6 @@ private:
       inline uint8_t StackPop();
 
 public:
-      // registers
-      uint8_t A; // accumulator
-      uint8_t X; // X-index
-      uint8_t Y; // Y-index
-
-      // stack pointer
-      uint8_t sp;
-
-      // program counter
-      uint16_t pc;
-
-      // status register
-      uint8_t status;
-	
-      bool illegalOpcode;
-	
       enum CycleMethod {
          INST_COUNT,
          CYCLE_COUNT,
@@ -178,14 +178,19 @@ public:
                            // useful when running e.g. WOZ Monitor
                            // no need to worry about cycle exhaus-
                            // tion
-	    
-	    // DEPRECATED (regs are now public)
+	
       uint16_t GetPC();
       uint8_t GetS();
       uint8_t GetP();
       uint8_t GetA();
       uint8_t GetX();
       uint8_t GetY();
+      void SetPC(uint16_t n);
+      void SetS(uint8_t n);
+      void SetP(uint8_t n);
+      void SetA(uint8_t n);
+      void SetX(uint8_t n);
+      void SetY(uint8_t n);
 	
       void SetResetS(uint8_t value);
       void SetResetP(uint8_t value);
