@@ -38,13 +38,18 @@ void tick(mos6502*) {
       count++;
       if (count > 100) {
          if (retaddr != -1) {
-            printf("\ncode %02X\n", ram[retaddr]);
             if (ram[retaddr]) {
+               printf("\ncode %02X\n", ram[retaddr]);
+               printf("Y=%02x\n",cpu->GetY());
+               printf("N1=%02x N2=%02x\n", ram[0], ram[1]);
+               printf("HA=%02x HNVZC=%02x\n", ram[2], ram[3]);
+               printf("DA=%02x DNVZC=%02x\n", ram[4], ram[5]);
+               printf("AR=%02x NF=%02x VF=%02x ZF=%02x CF=%02x\n", ram[6], ram[7], ram[8], ram[9], ram[10]);
                printf("FAIL\n");
                exit(-1);
             }
             else {
-               printf("success\n");
+               printf("\nsuccess\n");
                exit(0);
             }
          }

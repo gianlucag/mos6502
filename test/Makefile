@@ -47,3 +47,7 @@ dt.hex:
 6502_decimal_test: main dt.hex
 	@echo "================ Running $@"
 	./main dt.hex 0x200 ?0x000b
+
+6502_interrupt_test:
+	@echo "================ Running $@"
+	@echo "(not yet implemented)"
