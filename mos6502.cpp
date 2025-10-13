@@ -618,24 +618,25 @@ void mos6502::Op_ADC(uint16_t src)
 {
    uint8_t m = Read(src);
    unsigned int tmp = m + A + (IF_CARRY() ? 1 : 0);
-   SET_ZERO(!(tmp & 0xFF));
+
+   // N and V computed *BEFORE* adjustment
+   SET_NEGATIVE(tmp & 0x80);
+   SET_OVERFLOW(!((A ^ m) & 0x80) && ((A ^ tmp) & 0x80));
+
    if (IF_DECIMAL())
    {
-      if (((A & 0xF) + (m & 0xF) + (IF_CARRY() ? 1 : 0)) > 9) tmp += 6;
-      SET_NEGATIVE(tmp & 0x80);
-      SET_OVERFLOW(!((A ^ m) & 0x80) && ((A ^ tmp) & 0x80));
-      if (tmp > 0x99)
-      {
-         tmp += 96;
+      // see http://www.6502.org/tutorials/decimal_mode.html
+      int AL = ((A & 0xF) + (m & 0xF) + (IF_CARRY() ? 1 : 0));
+      if (AL >= 0xA) {
+         AL = ((AL + 6) & 0xF) + 0x10;
       }
-      SET_CARRY(tmp > 0x99);
+      tmp = (m & 0xF0) + (A & 0xF0) + AL;
+      if (tmp >= 0xA0) tmp += 0x60;
    }
-   else
-   {
-      SET_NEGATIVE(tmp & 0x80);
-      SET_OVERFLOW(!((A ^ m) & 0x80) && ((A ^ tmp) & 0x80));
-      SET_CARRY(tmp > 0xFF);
-   }
+
+   // Z and C computed *AFTER* adjustment
+   SET_ZERO(!(tmp & 0xFF));
+   SET_CARRY(tmp > 0xFF);
 
    A = tmp & 0xFF;
    return;
@@ -1088,22 +1089,29 @@ void mos6502::Op_RTS(uint16_t src)
 
 void mos6502::Op_SBC(uint16_t src)
 {
-   uint8_t m = Read(src);
-   unsigned int tmp = A - m - (IF_CARRY() ? 0 : 1);
-   SET_NEGATIVE(tmp & 0x80);
-   SET_ZERO(!(tmp & 0xFF));
-   SET_OVERFLOW(((A ^ tmp) & 0x80) && ((A ^ m) & 0x80));
+   uint8_t m   = Read(src);
+   int tmp     = A - m - (IF_CARRY() ? 0 : 1);
+
+   // N and V computed *BEFORE* adjustment (binary semantics)
+   SET_NEGATIVE(tmp & 0x80 );
+   SET_OVERFLOW(((A ^ m) & (A ^ tmp) & 0x80) != 0);
 
    if (IF_DECIMAL())
    {
-      if ( ((A & 0x0F) - (IF_CARRY() ? 0 : 1)) < (m & 0x0F)) tmp -= 6;
-      if (tmp > 0x99)
-      {
-         tmp -= 0x60;
+      // see http://www.6502.org/tutorials/decimal_mode.html
+      int AL = (A & 0x0F) - (m & 0x0F) - (IF_CARRY() ? 0 : 1);
+      if (AL < 0) {
+         AL = ((AL - 6) & 0x0F) - 0x10;
       }
+      tmp = (A & 0xF0) - (m & 0xF0) + AL;
+      if (tmp < 0) tmp -= 0x60;
    }
-   SET_CARRY(tmp < 0x100);
-   A = (tmp & 0xFF);
+
+   // Z and C computed *AFTER* adjustment
+   SET_ZERO(!(tmp & 0xFF));
+   SET_CARRY( tmp >= 0 );
+
+   A = tmp & 0xFF;
    return;
 }
 
