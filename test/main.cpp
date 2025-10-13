@@ -28,7 +28,7 @@ void tick(mos6502*) {
    static int count = 0;
    uint16_t pc = cpu->GetPC();
    if (pc != lastpc) {
-      printf("PC=%04x\n", pc);
+      printf("PC=%04x\r", pc);
    }
    if (pc == success) {
       printf("\nsuccess\n");
