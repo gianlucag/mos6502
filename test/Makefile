@@ -14,14 +14,14 @@ SHELL := /bin/bash
 
 BASE := 6502_65C02_functional_tests
 
-all: $(BASE)/as65_142 main tests tests
+all: $(BASE) $(BASE)/as65_142 main tests tests
    @echo TEST COMPLETE: success
 
 $(BASE):
 	@echo "Fetching functional tests from GitHub..."
 	git clone https://github.com/Klaus2m5/6502_65C02_functional_tests
 
-$(BASE)/as65_142: 6502_65C02_functional_tests
+$(BASE)/as65_142:
 	echo "Unpacking assembler..."
 	mkdir -p $(BASE)/as65_142
 	( cd $(BASE)/as65_142 && unzip ../as65_142.zip )

@@ -38,13 +38,13 @@ void tick(mos6502*) {
       count++;
       if (count > 100) {
          if (retaddr != -1) {
-            printf("code %02X\n", ram[retaddr]);
+            printf("\ncode %02X\n", ram[retaddr]);
             if (ram[retaddr]) {
-               printf("\nFAIL\n");
+               printf("FAIL\n");
                exit(-1);
             }
             else {
-               printf("\nsuccess\n");
+               printf("success\n");
                exit(0);
             }
          }
