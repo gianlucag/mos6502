@@ -27,7 +27,7 @@ $(BASE)/as65_142: 6502_65C02_functional_tests
 	( cd $(BASE)/as65_142 && unzip ../as65_142.zip )
 
 main: main.cpp ../mos6502.cpp ../mos6502.h
-	g++ -o main ../mos6502.cpp main.cpp
+	g++ -g -o main ../mos6502.cpp main.cpp
 
 tests: 6502_functional_test 6502_decimal_test 6502_interrupt_test
 
@@ -38,3 +38,12 @@ ft.hex:
 6502_functional_test: main ft.hex
 	@echo "================ Running $@"
 	./main ft.hex 0x400 0x3469
+
+dt.hex:
+	cp $(BASE)/6502_decimal_test.a65 dt.a65
+	patch -p0 < decimal.patch
+	./as65.sh dt.a65
+
+6502_decimal_test: main dt.hex
+	@echo "================ Running $@"
+	./main dt.hex 0x200 ?0x000b

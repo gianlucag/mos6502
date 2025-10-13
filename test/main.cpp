@@ -13,6 +13,7 @@ mos6502 *cpu = NULL;
 
 int start = -1;
 int success = -1;
+int retaddr = -1;
 
 void writeRam(uint16_t addr, uint8_t val) {
    ram[addr] = val;
@@ -26,7 +27,9 @@ void tick(mos6502*) {
    static uint16_t lastpc = 0xFFFF;
    static int count = 0;
    uint16_t pc = cpu->GetPC();
-   printf("PC=%04x\r", pc);
+   if (pc != lastpc) {
+      printf("PC=%04x\n", pc);
+   }
    if (pc == success) {
       printf("\nsuccess\n");
       exit(0);
@@ -34,8 +37,21 @@ void tick(mos6502*) {
    if (pc == lastpc) {
       count++;
       if (count > 100) {
-         printf("\nFAIL\n");
-         exit(-1);
+         if (retaddr != -1) {
+            printf("code %02X\n", ram[retaddr]);
+            if (ram[retaddr]) {
+               printf("\nFAIL\n");
+               exit(-1);
+            }
+            else {
+               printf("\nsuccess\n");
+               exit(0);
+            }
+         }
+         else {
+            printf("\nFAIL\n");
+            exit(-1);
+         }
       }
    }
    else {
@@ -107,7 +123,13 @@ int main(int argc, char **argv) {
 
    handle_hex(argv[1]);
    start = strtoul(argv[2], NULL, 0);
-   success = strtoul(argv[3], NULL, 0);
+
+   if (argv[3][0] == '?') {
+      retaddr = strtoul(argv[3]+1, NULL, 0);
+   }
+   else {
+      success = strtoul(argv[3], NULL, 0);
+   }
 
    printf("start=%04X\n", start);
    ram[0xFFFC] = start & 0xFF;
