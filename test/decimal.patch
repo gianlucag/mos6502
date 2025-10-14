@@ -1,0 +1,11 @@
+--- dt.a65	2025-10-12 17:08:27.391206657 -0700
++++ dt.a65	2025-10-12 17:10:37.155949816 -0700
+@@ -34,7 +34,7 @@ chk_z   = 0         ; check zero flag
+ chk_c   = 1         ; check carry flag
+ 
+ end_of_test macro
+-                db  $db     ;execute 65C02 stop instruction
++                jmp *       ; 6502 has no stop instruction
+             endm
+ 
+         bss
