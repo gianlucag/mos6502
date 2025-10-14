@@ -15,15 +15,18 @@ int start = -1;
 int success = -1;
 int retaddr = -1;
 
-void writeRam(uint16_t addr, uint8_t val) {
+void writeRam(uint16_t addr, uint8_t val)
+{
    ram[addr] = val;
 }
 
-uint8_t readRam(uint16_t addr) {
+uint8_t readRam(uint16_t addr)
+{
    return ram[addr];
 }
 
-void tick(mos6502*) {
+void tick(mos6502*)
+{
    static uint16_t lastpc = 0xFFFF;
    static int count = 0;
    uint16_t pc = cpu->GetPC();
@@ -40,11 +43,12 @@ void tick(mos6502*) {
          if (retaddr != -1) {
             if (ram[retaddr]) {
                printf("\ncode %02X\n", ram[retaddr]);
-               printf("Y=%02x\n",cpu->GetY());
+               printf("Y=%02x\n", cpu->GetY());
                printf("N1=%02x N2=%02x\n", ram[0], ram[1]);
                printf("HA=%02x HNVZC=%02x\n", ram[2], ram[3]);
                printf("DA=%02x DNVZC=%02x\n", ram[4], ram[5]);
-               printf("AR=%02x NF=%02x VF=%02x ZF=%02x CF=%02x\n", ram[6], ram[7], ram[8], ram[9], ram[10]);
+               printf("AR=%02x NF=%02x VF=%02x ZF=%02x CF=%02x\n", ram[6], ram[7], ram[8], ram[9],
+                      ram[10]);
                printf("FAIL\n");
                exit(-1);
             }
@@ -65,12 +69,14 @@ void tick(mos6502*) {
    lastpc = pc;
 }
 
-void bail(const char *s) {
+void bail(const char *s)
+{
    fprintf(stderr, "%s\n", s);
    exit(-1);
 }
 
-uint32_t fetch(const char *s, uint16_t offset, uint8_t count) {
+uint32_t fetch(const char *s, uint16_t offset, uint8_t count)
+{
    uint32_t ret = 0;
    uint32_t val;
    for (int i = 0; i < count; i++) {
@@ -89,7 +95,8 @@ uint32_t fetch(const char *s, uint16_t offset, uint8_t count) {
    return ret;
 }
 
-void handle_hex(const char *fname) {
+void handle_hex(const char *fname)
+{
    char buf[1024];
    FILE *f = fopen(fname, "r");
    if (!f) {
@@ -120,7 +127,8 @@ void handle_hex(const char *fname) {
    fclose(f);
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char **argv)
+{
    if (argc != 4) {
       fprintf(stderr, "Usage: %s <file>.hex <start> <success>\n", argv[0]);
       return -1;
