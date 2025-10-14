@@ -18,6 +18,13 @@ int retaddr = -1;
 void writeRam(uint16_t addr, uint8_t val)
 {
    ram[addr] = val;
+
+   // feedback
+   if (addr == 0xbffc) {
+      // things are inverted here
+      cpu->IRQ((val & 1) ? false : true);
+      cpu->NMI((val & 2) ? false : true);
+   }
 }
 
 uint8_t readRam(uint16_t addr)

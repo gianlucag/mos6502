@@ -55,6 +55,15 @@ private:
 
       bool crossed;
 
+      bool irq_handling;  // are we currently handling an IRQ?
+      bool irq_line;      // current state of the line
+
+      bool nmi_pending;   // is there an NMI pending?
+      bool nmi_handling;  // are we currently handling an NMI?
+      bool nmi_line;      // current state of the NMI line
+
+      bool CheckInterrupts();
+
       // addressing modes
       uint16_t Addr_ACC(); // ACCUMULATOR
       uint16_t Addr_IMM(); // IMMEDIATE
@@ -140,6 +149,9 @@ private:
 
       void Op_ILLEGAL(uint16_t src);
 
+      void Svc_NMI();
+      void Svc_IRQ();
+
       // IRQ, reset, NMI vectors
       static const uint16_t irqVectorH = 0xFFFF;
       static const uint16_t irqVectorL = 0xFFFE;
@@ -166,8 +178,17 @@ public:
          CYCLE_COUNT,
       };
       mos6502(BusRead r, BusWrite w, ClockCycle c = nullptr);
-      void NMI();
-      void IRQ();
+
+      // set or clear the NMI line.  this is an input to the processor.
+      // a high to low edge transition will trigger an interrupt.
+      // line state is NOT cleared by Reset()
+      void NMI(bool line);
+
+      // set or clear the IRQ line.  this is an input to the processor.
+      // a low level will trigger an interrupt.
+      // line state is NOT cleared by Reset()
+      void IRQ(bool line);
+
       void Reset();
       void Run(
             int32_t cycles,
