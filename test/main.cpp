@@ -3,9 +3,13 @@
 #include "../mos6502.h"
 
 #include <stdlib.h>
+#include <string.h>
 #include <stdio.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <stdbool.h>
+
+bool quiet = false;
 
 uint8_t ram[65536] = {0};
 
@@ -38,7 +42,9 @@ void tick(mos6502*)
    static int count = 0;
    uint16_t pc = cpu->GetPC();
    if (pc != lastpc) {
-      printf("PC=%04x\r", pc);
+      if (!quiet) {
+         printf("PC=%04x\r", pc);
+      }
    }
    if (pc == success) {
       printf("\nsuccess\n");
@@ -134,11 +140,14 @@ void handle_hex(const char *fname)
    fclose(f);
 }
 
-int main(int argc, char **argv)
-{
-   if (argc != 4) {
-      fprintf(stderr, "Usage: %s <file>.hex <start> <success>\n", argv[0]);
+int main(int argc, char **argv) {
+   if (argc != 4 && argc != 5) {
+      fprintf(stderr, "Usage: %s <file>.hex <start> <success> [quiet]\n", argv[0]);
       return -1;
+   }
+
+   if (argc == 5 && !strcmp(argv[4], "quiet")) {
+      quiet = true;
    }
 
    handle_hex(argv[1]);
