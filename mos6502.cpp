@@ -55,6 +55,7 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
    instr.code = &mos6502::Op_ILLEGAL;
    instr.scode = "(null)";
    instr.penalty = false;
+   instr.cycles = 0;
    for(int i = 0; i < 256; i++)
    {
       InstrTable[i] = instr;
@@ -1208,21 +1209,52 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 // 7A   implied         1       2
 // DA   implied         1       2
 // FA   implied         1       2
+
+   MAKE_INSTR(0x1A, NOP, IMP, 2, false);
+   MAKE_INSTR(0x3A, NOP, IMP, 2, false);
+   MAKE_INSTR(0x5A, NOP, IMP, 2, false);
+   MAKE_INSTR(0x7A, NOP, IMP, 2, false);
+   MAKE_INSTR(0xDA, NOP, IMP, 2, false);
+   MAKE_INSTR(0xFA, NOP, IMP, 2, false);
+
 // 80   immediate       2       2
 // 82   immediate       2       2
 // 89   immediate       2       2
 // C2   immediate       2       2
 // E2   immediate       2       2
+
+   MAKE_INSTR(0x80, NOP, IMM, 2, false);
+   MAKE_INSTR(0x82, NOP, IMM, 2, false);
+   MAKE_INSTR(0x89, NOP, IMM, 2, false);
+   MAKE_INSTR(0xC2, NOP, IMM, 2, false);
+   MAKE_INSTR(0xE2, NOP, IMM, 2, false);
+
 // 04   zeropage        2       3
 // 44   zeropage        2       3
 // 64   zeropage        2       3
+
+   MAKE_INSTR(0x04, NOP, ZER, 3, false);
+   MAKE_INSTR(0x44, NOP, ZER, 3, false);
+   MAKE_INSTR(0x64, NOP, ZER, 3, false);
+
 // 14   zeropage,X      2       4
 // 34   zeropage,X      2       4
 // 54   zeropage,X      2       4
 // 74   zeropage,X      2       4
 // D4   zeropage,X      2       4
 // F4   zeropage,X      2       4
+
+   MAKE_INSTR(0x14, NOP, ZEX, 4, false);
+   MAKE_INSTR(0x34, NOP, ZEX, 4, false);
+   MAKE_INSTR(0x54, NOP, ZEX, 4, false);
+   MAKE_INSTR(0x74, NOP, ZEX, 4, false);
+   MAKE_INSTR(0xD4, NOP, ZEX, 4, false);
+   MAKE_INSTR(0xF4, NOP, ZEX, 4, false);
+
 // 0C   absolute        3       4
+
+   MAKE_INSTR(0x0C, NOP, ABS, 4, false);
+
 // 1C   absolute,X      3       4*
 // 3C   absolute,X      3       4*
 // 5C   absolute,X      3       4*
@@ -1230,12 +1262,32 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 // DC   absolute,X      3       4*
 // FC   absolute,X      3       4*
 
+   MAKE_INSTR(0x1C, NOP, ABX, 4, true);
+   MAKE_INSTR(0x3C, NOP, ABX, 4, true);
+   MAKE_INSTR(0x5C, NOP, ABX, 4, true);
+   MAKE_INSTR(0x7C, NOP, ABX, 4, true);
+   MAKE_INSTR(0xDC, NOP, ABX, 4, true);
+   MAKE_INSTR(0xFC, NOP, ABX, 4, true);
+
 // JAM (KIL, HLT)
 // These instructions freeze the CPU.
 // 
 // The processor will be trapped infinitely in T1 phase with $FF on the data bus. — Reset required.
 // 
 // Instruction codes: 02, 12, 22, 32, 42, 52, 62, 72, 92, B2, D2, F2
+
+   MAKE_INSTR(0x02, ILLEGAL, IMP, 0, false);
+   MAKE_INSTR(0x12, ILLEGAL, IMP, 0, false);
+   MAKE_INSTR(0x22, ILLEGAL, IMP, 0, false);
+   MAKE_INSTR(0x32, ILLEGAL, IMP, 0, false);
+   MAKE_INSTR(0x42, ILLEGAL, IMP, 0, false);
+   MAKE_INSTR(0x52, ILLEGAL, IMP, 0, false);
+   MAKE_INSTR(0x62, ILLEGAL, IMP, 0, false);
+   MAKE_INSTR(0x72, ILLEGAL, IMP, 0, false);
+   MAKE_INSTR(0x92, ILLEGAL, IMP, 0, false);
+   MAKE_INSTR(0xB2, ILLEGAL, IMP, 0, false);
+   MAKE_INSTR(0xD2, ILLEGAL, IMP, 0, false);
+   MAKE_INSTR(0xF2, ILLEGAL, IMP, 0, false);
 
 #endif
 
