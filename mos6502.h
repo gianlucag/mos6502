@@ -148,6 +148,7 @@ class mos6502
 
 #ifdef ILLEGAL_OPCODES
       void Op_ALR(uint16_t src);
+      void Op_ANC(uint16_t src);
 #endif
 
       void Op_ILLEGAL(uint16_t src);

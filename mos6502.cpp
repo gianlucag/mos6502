@@ -933,6 +933,8 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 // addressing   assembler       opc     bytes   cycles
 // immediate    ANC #oper       0B      2       2
 
+   MAKE_INSTR(0x0B, ANC, IMM, 2, false);
+
 // ANC (ANC2)
 // AND oper + set C as ROL
 // 
@@ -944,6 +946,8 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 // +    +       +       -       -       -
 // addressing   assembler       opc     bytes   cycles
 // immediate    ANC #oper       2B      2       2
+
+   MAKE_INSTR(0x2B, ANC, IMM, 2, false);
 
 // ANE (XAA)
 // * OR X + AND oper
@@ -2336,7 +2340,17 @@ void mos6502::Op_ALR(uint16_t src)
    SET_ZERO(!res);
    A = res;
    return;
-   fnord
+}
+
+void mos6502::Op_ANC(uint16_t src)
+{
+   uint8_t m = Read(src);
+   uint8_t res = m & A;
+   SET_CARRY(res & 0x80);
+   SET_NEGATIVE(res & 0x80);
+   SET_ZERO(!res);
+   A = res;
+   return;
 }
 
 #endif
