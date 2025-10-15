@@ -55,11 +55,10 @@ private:
 
       bool crossed;
 
-      bool irq_handling;  // are we currently handling an IRQ?
       bool irq_line;      // current state of the line
 
-      bool nmi_pending;   // is there an NMI pending?
-      bool nmi_handling;  // are we currently handling an NMI?
+      bool nmi_request;   // is there an NMI pending?
+      bool nmi_inhibit;  // are we currently handling an NMI?
       bool nmi_line;      // current state of the NMI line
 
       bool CheckInterrupts();
