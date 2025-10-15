@@ -12,7 +12,7 @@
 
 class mos6502
 {
-private:
+   private:
       // register reset values
       uint8_t reset_A;
       uint8_t reset_X;
@@ -172,7 +172,7 @@ private:
       inline void StackPush(uint8_t byte);
       inline uint8_t StackPop();
 
-public:
+   public:
       enum CycleMethod {
          INST_COUNT,
          CYCLE_COUNT,
@@ -198,17 +198,29 @@ public:
                            // useful when running e.g. WOZ Monitor
                            // no need to worry about cycle exhaus-
                            // tion
+
+      // Various getter/setters
+
       uint16_t GetPC();
       uint8_t GetS();
       uint8_t GetP();
       uint8_t GetA();
       uint8_t GetX();
       uint8_t GetY();
+
+      void SetPC(uint16_t n);
+      void SetS(uint8_t n);
+      void SetP(uint8_t n);
+      void SetA(uint8_t n);
+      void SetX(uint8_t n);
+      void SetY(uint8_t n);
+
       void SetResetS(uint8_t value);
       void SetResetP(uint8_t value);
       void SetResetA(uint8_t value);
       void SetResetX(uint8_t value);
       void SetResetY(uint8_t value);
+
       uint8_t GetResetS();
       uint8_t GetResetP();
       uint8_t GetResetA();
