@@ -37,7 +37,7 @@ ft.hex:
 
 6502_functional_test: main ft.hex
 	@echo "================ Running $@"
-	./main ft.hex 0x400 0x3469
+	./main ft.hex 0x400 0x3469 quiet # magic numbers come from comments and examination of *.lst
 
 dt.hex:
 	cp $(BASE)/6502_decimal_test.a65 dt.a65
@@ -46,8 +46,12 @@ dt.hex:
 
 6502_decimal_test: main dt.hex
 	@echo "================ Running $@"
-	./main dt.hex 0x200 ?0x000b
+	./main dt.hex 0x200 ?0x000b quiet # magic numbers come from comments and examination of *.lst
 
-6502_interrupt_test:
+it.hex:
+	cp $(BASE)/6502_interrupt_test.a65 it.a65
+	./as65.sh it.a65
+
+6502_interrupt_test: main it.hex
 	@echo "================ Running $@"
-	@echo "(not yet implemented)"
+	./main it.hex 0x400 0x06f5 quiet # magic numbers come from comments and examination of *.lst

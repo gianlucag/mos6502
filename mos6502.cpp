@@ -35,6 +35,11 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
    , reset_Y(0x00)
    , reset_sp(0xFD)
    , reset_status(CONSTANT)
+   , irq_handling(false)
+   , irq_line(true)
+   , nmi_pending(false)
+   , nmi_handling(false)
+   , nmi_line(true)
 {
    Write = (BusWrite)w;
    Read = (BusRead)r;
@@ -397,8 +402,31 @@ uint16_t mos6502::Addr_INY()
    return addr;
 }
 
+void mos6502::IRQ(bool line)
+{
+   irq_line = line;
+}
+
+void mos6502::NMI(bool line)
+{
+   // falling edge triggered
+   if (nmi_line == true && line == false) {
+      if (!nmi_handling) {
+         nmi_pending = true;
+      }
+   }
+   nmi_line = line;
+}
+
 void mos6502::Reset()
 {
+   // do not set or clear irq_line, that's external to us
+   irq_handling = false;
+
+   // do not set or clear nmi_line, that's external to us
+   nmi_pending = false;
+   nmi_handling = false;
+
    A = reset_A;
    Y = reset_Y;
    X = reset_X;
@@ -431,25 +459,22 @@ uint8_t mos6502::StackPop()
    return Read(0x0100 + sp);
 }
 
-void mos6502::IRQ()
+void mos6502::Svc_IRQ()
 {
-   if(!IF_INTERRUPT())
-   {
-      //SET_BREAK(0);
-      StackPush((pc >> 8) & 0xFF);
-      StackPush(pc & 0xFF);
-      StackPush((status & ~BREAK) | CONSTANT);
-      SET_INTERRUPT(1);
+   //SET_BREAK(0);
+   StackPush((pc >> 8) & 0xFF);
+   StackPush(pc & 0xFF);
+   StackPush((status & ~BREAK) | CONSTANT);
+   SET_INTERRUPT(1);
 
-      // load PC from interrupt request vector
-      uint8_t pcl = Read(irqVectorL);
-      uint8_t pch = Read(irqVectorH);
-      pc = (pch << 8) + pcl;
-   }
+   // load PC from interrupt request vector
+   uint8_t pcl = Read(irqVectorL);
+   uint8_t pch = Read(irqVectorH);
+   pc = (pch << 8) + pcl;
    return;
 }
 
-void mos6502::NMI()
+void mos6502::Svc_NMI()
 {
    //SET_BREAK(0);
    StackPush((pc >> 8) & 0xFF);
@@ -464,6 +489,29 @@ void mos6502::NMI()
    return;
 }
 
+bool mos6502::CheckInterrupts() {
+
+   // NMI is edge triggered
+   if (nmi_pending && !nmi_handling) {
+      nmi_pending = false;
+      nmi_handling = true;
+      Svc_NMI();
+      return true;
+   }
+
+   // check disabled bit
+   if(!IF_INTERRUPT()) {
+      // IRQ is level triggered
+      if (irq_line == false && !nmi_handling && !irq_handling) {
+         irq_handling = true;
+         Svc_IRQ();
+         return true;
+      }
+   }
+
+   return false;
+}
+
 void mos6502::Run(
       int32_t cyclesRemaining,
       uint64_t& cycleCount,
@@ -474,6 +522,10 @@ void mos6502::Run(
 
    while(cyclesRemaining > 0 && !illegalOpcode)
    {
+      if (CheckInterrupts()) {
+         cycleCount += 6; // TODO FIX verify this is correct
+      }
+
       // fetch
       opcode = Read(pc++);
 
@@ -505,6 +557,8 @@ void mos6502::RunEternally()
 
    while(!illegalOpcode)
    {
+      CheckInterrupts();
+
       // fetch
       opcode = Read(pc++);
 
@@ -1073,6 +1127,14 @@ void mos6502::Op_RTI(uint16_t src)
    hi = StackPop();
 
    pc = (hi << 8) | lo;
+
+   if (nmi_handling) {
+      nmi_handling = false;
+   }
+   else if (irq_handling) {
+      irq_handling = false;
+   }
+
    return;
 }
 
