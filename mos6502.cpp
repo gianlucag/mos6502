@@ -967,6 +967,8 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 // addressing   assembler       opc     bytes   cycles
 // immediate    ANE #oper       8B      2       2       ††
 
+   MAKE_INSTR(0x8B, ANE, IMM, 2, false);
+
 // ARR
 // AND oper + ROR
 // 
@@ -2347,6 +2349,21 @@ void mos6502::Op_ANC(uint16_t src)
    uint8_t m = Read(src);
    uint8_t res = m & A;
    SET_CARRY(res & 0x80);
+   SET_NEGATIVE(res & 0x80);
+   SET_ZERO(!res);
+   A = res;
+   return;
+}
+
+void mos6502::Op_ANE(uint16_t src)
+{
+// A base value in A is determined based on the contets of A and a constant,
+// which may be typically $00, $ff, $ee, etc. The value of this constant
+// depends on temperature, the chip series, and maybe other factors, as well.
+   const uint8_t constant = 0xee; 
+
+   uint8_t m = Read(src);
+   uint8_t res = ((A | constant) & X & m);
    SET_NEGATIVE(res & 0x80);
    SET_ZERO(!res);
    A = res;
