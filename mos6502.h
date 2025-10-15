@@ -53,7 +53,14 @@ private:
 
       void Exec(Instr i);
 
-      int cycleTimer;
+      /*
+            at the end of every Run(), since it cannot execute an instruction partially,
+            this var is set to the amount of cycles it overflowed compared to the value passed in cyclesRemaining.
+
+            it balances that overflow by waiting for as many cycles as it overflowed in
+            the previous iteration of Run() (and thus, cycleOverflowCnt) in the current iteration of Run().
+      */
+      int cycleOverflowCnt;
       bool crossed;
 
       // addressing modes

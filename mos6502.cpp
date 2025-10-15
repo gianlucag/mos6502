@@ -474,8 +474,8 @@ void mos6502::Run(
 
    while(cyclesRemaining > 0 && !illegalOpcode)
    {
-		if (cycleTimer > 0) {
-			cycleTimer--;
+		if (cycleOverflowCnt > 0) {
+			cycleOverflowCnt--;
 			cyclesRemaining--;
 			continue;
 		}
@@ -503,7 +503,7 @@ void mos6502::Run(
             Cycle(this);
    }
 	
-	  cycleTimer += -cyclesRemaining;
+	  cycleOverflowCnt += -cyclesRemaining;
 }
 
 void mos6502::RunEternally()
