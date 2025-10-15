@@ -27,7 +27,7 @@ $(BASE)/as65_142:
 	( cd $(BASE)/as65_142 && unzip ../as65_142.zip )
 
 main: main.cpp ../mos6502.cpp ../mos6502.h
-	g++ -g -o main ../mos6502.cpp main.cpp
+	g++ -O3 -g -o main ../mos6502.cpp main.cpp
 
 tests: 6502_functional_test 6502_decimal_test 6502_interrupt_test
 

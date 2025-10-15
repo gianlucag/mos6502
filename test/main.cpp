@@ -26,8 +26,10 @@ uint8_t readRam(uint16_t addr) {
 void tick(mos6502*) {
    static uint16_t lastpc = 0xFFFF;
    static int count = 0;
+   static int no_cycles = 0;
+
    uint16_t pc = cpu->GetPC();
-   if (pc != lastpc) {
+   if (pc != lastpc && (no_cycles % 100) == 0) {
       printf("PC=%04x\r", pc);
    }
    if (pc == success) {
@@ -63,6 +65,8 @@ void tick(mos6502*) {
       count = 0;
    }
    lastpc = pc;
+
+   no_cycles++;
 }
 
 void bail(const char *s) {

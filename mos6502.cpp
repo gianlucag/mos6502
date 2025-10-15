@@ -546,9 +546,9 @@ uint8_t  mos6502::GetY()  { return Y; }
 void mos6502::SetPC( uint16_t n ) { pc = n; }
 void mos6502::SetS(  uint8_t n  ) { sp = n; }
 void mos6502::SetP(  uint8_t n  ) { status = n; }
-void mos6502::SetA(  uint8_t n  ) { a = n; }
-void mos6502::SetX(  uint8_t n  ) { x = n; }
-void mos6502::SetY(  uint8_t n  ) { y = n; }
+void mos6502::SetA(  uint8_t n  ) { A = n; }
+void mos6502::SetX(  uint8_t n  ) { X = n; }
+void mos6502::SetY(  uint8_t n  ) { Y = n; }
 
 void mos6502::SetResetS(uint8_t value) { reset_sp = value; }
 void mos6502::SetResetA(uint8_t value) { reset_A = value; }
