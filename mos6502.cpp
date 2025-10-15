@@ -35,10 +35,9 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
    , reset_Y(0x00)
    , reset_sp(0xFD)
    , reset_status(CONSTANT)
-   , irq_handling(false)
    , irq_line(true)
-   , nmi_pending(false)
-   , nmi_handling(false)
+   , nmi_request(false)
+   , nmi_inhibit(false)
    , nmi_line(true)
 {
    Write = (BusWrite)w;
@@ -411,8 +410,8 @@ void mos6502::NMI(bool line)
 {
    // falling edge triggered
    if (nmi_line == true && line == false) {
-      if (!nmi_handling) {
-         nmi_pending = true;
+      if (!nmi_inhibit) {
+         nmi_request = true;
       }
    }
    nmi_line = line;
@@ -421,11 +420,9 @@ void mos6502::NMI(bool line)
 void mos6502::Reset()
 {
    // do not set or clear irq_line, that's external to us
-   irq_handling = false;
-
    // do not set or clear nmi_line, that's external to us
-   nmi_pending = false;
-   nmi_handling = false;
+   nmi_request = false;
+   nmi_inhibit = false;
 
    A = reset_A;
    Y = reset_Y;
@@ -492,9 +489,9 @@ void mos6502::Svc_NMI()
 bool mos6502::CheckInterrupts() {
 
    // NMI is edge triggered
-   if (nmi_pending && !nmi_handling) {
-      nmi_pending = false;
-      nmi_handling = true;
+   if (nmi_request && !nmi_inhibit) {
+      nmi_request = false;
+      nmi_inhibit = true;
       Svc_NMI();
       return true;
    }
@@ -502,8 +499,7 @@ bool mos6502::CheckInterrupts() {
    // check disabled bit
    if(!IF_INTERRUPT()) {
       // IRQ is level triggered
-      if (irq_line == false && !nmi_handling && !irq_handling) {
-         irq_handling = true;
+      if (irq_line == false && !nmi_inhibit) {
          Svc_IRQ();
          return true;
       }
@@ -1157,12 +1153,7 @@ void mos6502::Op_RTI(uint16_t src)
 
    pc = (hi << 8) | lo;
 
-   if (nmi_handling) {
-      nmi_handling = false;
-   }
-   else if (irq_handling) {
-      irq_handling = false;
-   }
+   nmi_inhibit = false; // always, more efficient that if()
 
    return;
 }
