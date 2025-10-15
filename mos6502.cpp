@@ -921,6 +921,8 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 // addressing   assembler       opc     bytes   cycles
 // immediate    ALR #oper       4B      2       2
 
+   MAKE_INSTR(0x4B, ALR, IMM, 2, false);
+
 // ANC
 // AND oper + set C as ASL
 // 
@@ -2321,3 +2323,20 @@ void mos6502::Op_TYA(uint16_t src)
    A = m;
    return;
 }
+
+#ifdef ILLEGAL_OPCODES
+
+void mos6502::Op_ALR(uint16_t src)
+{
+   uint8_t m = Read(src);
+   uint8_t res = m & A;
+   SET_CARRY(res & 1);
+   res >>= 1;
+   SET_NEGATIVE(res & 0x80);
+   SET_ZERO(!res);
+   A = res;
+   return;
+   fnord
+}
+
+#endif

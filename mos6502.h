@@ -146,6 +146,10 @@ class mos6502
       void Op_TXS(uint16_t src);
       void Op_TYA(uint16_t src);
 
+#ifdef ILLEGAL_OPCODES
+      void Op_ALR(uint16_t src);
+#endif
+
       void Op_ILLEGAL(uint16_t src);
 
       void Svc_NMI();
