@@ -908,6 +908,337 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 
    MAKE_INSTR(0x98, TYA, IMP, 2, false);
 
+#ifdef ILLEGAL_OPCODES
+// ALR (ASR)
+// AND oper + LSR
+// 
+// A AND oper, 0 -> [76543210] -> C
+// 
+// N    Z       C       I       D       V
+// +    +       +       -       -       -
+// addressing   assembler       opc     bytes   cycles
+// immediate    ALR #oper       4B      2       2
+
+// ANC
+// AND oper + set C as ASL
+// 
+// A AND oper, bit(7) -> C
+// 
+// N    Z       C       I       D       V
+// +    +       +       -       -       -
+// addressing   assembler       opc     bytes   cycles
+// immediate    ANC #oper       0B      2       2
+
+// ANC (ANC2)
+// AND oper + set C as ROL
+// 
+// effectively the same as instr. 0B
+// 
+// A AND oper, bit(7) -> C
+// 
+// N    Z       C       I       D       V
+// +    +       +       -       -       -
+// addressing   assembler       opc     bytes   cycles
+// immediate    ANC #oper       2B      2       2
+
+// ANE (XAA)
+// * OR X + AND oper
+// 
+// Highly unstable, do not use.
+// 
+// A base value in A is determined based on the contets of A and a constant,
+// which may be typically $00, $ff, $ee, etc. The value of this constant
+// depends on temperature, the chip series, and maybe other factors, as well.
+// In order to eliminate these uncertaincies from the equation, use either 0
+// as the operand or a value of $FF in the accumulator.
+// 
+// (A OR CONST) AND X AND oper -> A
+// 
+// N    Z       C       I       D       V
+// +    +       -       -       -       -
+// addressing   assembler       opc     bytes   cycles
+// immediate    ANE #oper       8B      2       2       ††
+
+// ARR
+// AND oper + ROR
+// 
+// This operation involves the adder:
+// V-flag is set according to (A AND oper) + oper
+// The carry is not set, but bit 7 (sign) is exchanged with the carry
+// 
+// A AND oper, C -> [76543210] -> C
+// 
+// N    Z       C       I       D       V
+// +    +       +       -       -       +
+// addressing   assembler       opc     bytes   cycles
+// immediate    ARR #oper       6B      2       2
+
+// DCP (DCM)
+// DEC oper + CMP oper
+// 
+// M - 1 -> M, A - M
+// 
+// Decrements the operand and then compares the result to the accumulator.
+// 
+// N    Z       C       I       D       V
+// +    +       +       -       -       -
+// addressing   assembler       opc     bytes   cycles
+// zeropage     DCP oper        C7      2       5
+// zeropage,X   DCP oper,X      D7      2       6
+// absolute     DCP oper        CF      3       6
+// absolute,X   DCP oper,X      DF      3       7
+// absolute,Y   DCP oper,Y      DB      3       7
+// (indirect,X) DCP (oper,X)    C3      2       8
+// (indirect),Y DCP (oper),Y    D3      2       8
+
+// ISC (ISB, INS)
+// INC oper + SBC oper
+// 
+// M + 1 -> M, A - M - C̅ -> A
+// 
+// N    Z       C       I       D       V
+// +    +       +       -       -       +
+// addressing   assembler       opc     bytes   cycles
+// zeropage     ISC oper        E7      2       5
+// zeropage,X   ISC oper,X      F7      2       6
+// absolute     ISC oper        EF      3       6
+// absolute,X   ISC oper,X      FF      3       7
+// absolute,Y   ISC oper,Y      FB      3       7
+// (indirect,X) ISC (oper,X)    E3      2       8
+// (indirect),Y ISC (oper),Y    F3      2       8
+
+// LAS (LAR)
+// LDA/TSX oper
+// 
+// M AND SP -> A, X, SP
+// 
+// N    Z       C       I       D       V
+// +    +       -       -       -       -
+// addressing   assembler       opc     bytes   cycles
+// absolute,Y   LAS oper,Y      BB      3       4*
+
+// LAX
+// LDA oper + LDX oper
+// 
+// M -> A -> X
+// 
+// N    Z       C       I       D       V
+// +    +       -       -       -       -
+// addressing   assembler       opc     bytes   cycles
+// zeropage     LAX oper        A7      2       3
+// zeropage,Y   LAX oper,Y      B7      2       4
+// absolute     LAX oper        AF      3       4
+// absolute,Y   LAX oper,Y      BF      3       4*
+// (indirect,X) LAX (oper,X)    A3      2       6
+// (indirect),Y LAX (oper),Y    B3      2       5*
+
+// LXA (LAX immediate)
+// Store * AND oper in A and X
+// 
+// Highly unstable, involves a 'magic' constant, see ANE
+// 
+// (A OR CONST) AND oper -> A -> X
+// 
+// N    Z       C       I       D       V
+// +    +       -       -       -       -
+// addressing   assembler       opc     bytes   cycles
+// immediate    LXA #oper       AB      2       2       ††
+
+// RLA
+// ROL oper + AND oper
+// 
+// M = C <- [76543210] <- C, A AND M -> A
+// 
+// N    Z       C       I       D       V
+// +    +       +       -       -       -
+// addressing   assembler       opc     bytes   cycles
+// zeropage     RLA oper        27      2       5
+// zeropage,X   RLA oper,X      37      2       6
+// absolute     RLA oper        2F      3       6
+// absolute,X   RLA oper,X      3F      3       7
+// absolute,Y   RLA oper,Y      3B      3       7
+// (indirect,X) RLA (oper,X)    23      2       8
+// (indirect),Y RLA (oper),Y    33      2       8
+
+// RRA
+// ROR oper + ADC oper
+// 
+// M = C -> [76543210] -> C, A + M + C -> A, C
+// 
+// N    Z       C       I       D       V
+// +    +       +       -       -       +
+// addressing   assembler       opc     bytes   cycles
+// zeropage     RRA oper        67      2       5
+// zeropage,X   RRA oper,X      77      2       6
+// absolute     RRA oper        6F      3       6
+// absolute,X   RRA oper,X      7F      3       7
+// absolute,Y   RRA oper,Y      7B      3       7
+// (indirect,X) RRA (oper,X)    63      2       8
+// (indirect),Y RRA (oper),Y    73      2       8
+
+// SAX (AXS, AAX)
+// A and X are put on the bus at the same time (resulting effectively in an AND operation) and stored in M
+// 
+// A AND X -> M
+// 
+// N    Z       C       I       D       V
+// -    -       -       -       -       -
+// addressing   assembler       opc     bytes   cycles
+// zeropage     SAX oper        87      2       3
+// zeropage,Y   SAX oper,Y      97      2       4
+// absolute     SAX oper        8F      3       4
+// (indirect,X) SAX (oper,X)    83      2       6
+
+// SBX (AXS, SAX)
+// CMP and DEX at once, sets flags like CMP
+// 
+// (A AND X) - oper -> X
+// 
+// N    Z       C       I       D       V
+// +    +       +       -       -       -
+// addressing   assembler       opc     bytes   cycles
+// immediate    SBX #oper       CB      2       2
+
+// SHA (AHX, AXA)
+// Stores A AND X AND (high-byte of addr. + 1) at addr.
+// 
+// unstable: sometimes 'AND (H+1)' is dropped, page boundary crossings
+// may not work (with the high-byte of the value used as the high-byte of the address)
+// 
+// A AND X AND (H+1) -> M
+// 
+// N    Z       C       I       D       V
+// -    -       -       -       -       -
+// addressing   assembler       opc     bytes   cycles
+// absolute,Y   SHA oper,Y      9F      3       5       †
+// (indirect),Y SHA (oper),Y    93      2       6       †
+
+// SHX (A11, SXA, XAS)
+// Stores X AND (high-byte of addr. + 1) at addr.
+// 
+// unstable: sometimes 'AND (H+1)' is dropped, page boundary
+// crossings may not work (with the high-byte of the value used as the high-byte of the address)
+// 
+// X AND (H+1) -> M
+// 
+// N    Z       C       I       D       V
+// -    -       -       -       -       -
+// addressing   assembler       opc     bytes   cycles
+// absolute,Y   SHX oper,Y      9E      3       5       †
+
+// SHY (A11, SYA, SAY)
+// Stores Y AND (high-byte of addr. + 1) at addr.
+// 
+// unstable: sometimes 'AND (H+1)' is dropped, page boundary
+// crossings may not work (with the high-byte of the value used as the high-byte of the address)
+// 
+// Y AND (H+1) -> M
+// 
+// N    Z       C       I       D       V
+// -    -       -       -       -       -
+// addressing   assembler       opc     bytes   cycles
+// absolute,X   SHY oper,X      9C      3       5       †
+
+// SLO (ASO)
+// ASL oper + ORA oper
+// 
+// M = C <- [76543210] <- 0, A OR M -> A
+// 
+// N    Z       C       I       D       V
+// +    +       +       -       -       -
+// addressing   assembler       opc     bytes   cycles
+// zeropage     SLO oper        07      2       5
+// zeropage,X   SLO oper,X      17      2       6
+// absolute     SLO oper        0F      3       6
+// absolute,X   SLO oper,X      1F      3       7
+// absolute,Y   SLO oper,Y      1B      3       7
+// (indirect,X) SLO (oper,X)    03      2       8
+// (indirect),Y SLO (oper),Y    13      2       8
+
+// SRE (LSE)
+// LSR oper + EOR oper
+// 
+// M = 0 -> [76543210] -> C, A EOR M -> A
+// 
+// N    Z       C       I       D       V
+// +    +       +       -       -       -
+// addressing   assembler       opc     bytes   cycles
+// zeropage     SRE oper        47      2       5
+// zeropage,X   SRE oper,X      57      2       6
+// absolute     SRE oper        4F      3       6
+// absolute,X   SRE oper,X      5F      3       7
+// absolute,Y   SRE oper,Y      5B      3       7
+// (indirect,X) SRE (oper,X)    43      2       8
+// (indirect),Y SRE (oper),Y    53      2       8
+
+// TAS (XAS, SHS)
+// Puts A AND X in SP and stores A AND X AND (high-byte of addr. + 1) at addr.
+// 
+// unstable: sometimes 'AND (H+1)' is dropped, page boundary
+// crossings may not work (with the high-byte of the value used as the high-byte of the address)
+// 
+// A AND X -> SP, A AND X AND (H+1) -> M
+// 
+// N    Z       C       I       D       V
+// -    -       -       -       -       -
+// addressing   assembler       opc     bytes   cycles
+// absolute,Y   TAS oper,Y      9B      3       5       †
+
+// USBC (SBC)
+// SBC oper + NOP
+// 
+// effectively same as normal SBC immediate, instr. E9.
+// 
+// A - M - C̅ -> A
+// 
+// N    Z       C       I       D       V
+// +    +       +       -       -       +
+// addressing   assembler       opc     bytes   cycles
+// immediate    USBC #oper      EB      2       2
+
+// NOPs (including DOP, TOP)
+// Instructions effecting in 'no operations' in various address modes. Operands are ignored.
+// 
+// N    Z       C       I       D       V
+// -    -       -       -       -       -
+// opc  addressing      bytes   cycles
+// 1A   implied         1       2
+// 3A   implied         1       2
+// 5A   implied         1       2
+// 7A   implied         1       2
+// DA   implied         1       2
+// FA   implied         1       2
+// 80   immediate       2       2
+// 82   immediate       2       2
+// 89   immediate       2       2
+// C2   immediate       2       2
+// E2   immediate       2       2
+// 04   zeropage        2       3
+// 44   zeropage        2       3
+// 64   zeropage        2       3
+// 14   zeropage,X      2       4
+// 34   zeropage,X      2       4
+// 54   zeropage,X      2       4
+// 74   zeropage,X      2       4
+// D4   zeropage,X      2       4
+// F4   zeropage,X      2       4
+// 0C   absolute        3       4
+// 1C   absolute,X      3       4*
+// 3C   absolute,X      3       4*
+// 5C   absolute,X      3       4*
+// 7C   absolute,X      3       4*
+// DC   absolute,X      3       4*
+// FC   absolute,X      3       4*
+
+// JAM (KIL, HLT)
+// These instructions freeze the CPU.
+// 
+// The processor will be trapped infinitely in T1 phase with $FF on the data bus. — Reset required.
+// 
+// Instruction codes: 02, 12, 22, 32, 42, 52, 62, 72, 92, B2, D2, F2
+
+#endif
+
    return;
 }
 
