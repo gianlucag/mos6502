@@ -910,6 +910,7 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
    MAKE_INSTR(0x98, TYA, IMP, 2, false);
 
 #ifdef ILLEGAL_OPCODES
+
 // ALR (ASR)
 // AND oper + LSR
 // 
@@ -1196,6 +1197,8 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 // +    +       +       -       -       +
 // addressing   assembler       opc     bytes   cycles
 // immediate    USBC #oper      EB      2       2
+
+   MAKE_INSTR(0xEB, SBC, IMM, 2, false);
 
 // NOPs (including DOP, TOP)
 // Instructions effecting in 'no operations' in various address modes. Operands are ignored.
