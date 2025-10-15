@@ -402,6 +402,22 @@ uint16_t mos6502::Addr_INY()
    return addr;
 }
 
+void mos6502::IRQ(bool line)
+{
+   irq_line = line;
+}
+
+void mos6502::NMI(bool line)
+{
+   // falling edge triggered
+   if (nmi_line == true && line == false) {
+      if (!nmi_handling) {
+         nmi_pending = true;
+      }
+   }
+   nmi_line = line;
+}
+
 void mos6502::Reset()
 {
    // do not set or clear irq_line, that's external to us
@@ -651,21 +667,6 @@ void mos6502::Op_ILLEGAL(uint16_t src)
    illegalOpcode = true;
 }
 
-void mos6502::IRQ(bool line)
-{
-   irq_line = line;
-}
-
-void mos6502::NMI(bool line)
-{
-   // falling edge triggered
-   if (nmi_line == true && line == false) {
-      if (!nmi_handling) {
-         nmi_pending = true;
-      }
-   }
-   nmi_line = line;
-}
 
 void mos6502::Op_ADC(uint16_t src)
 {
