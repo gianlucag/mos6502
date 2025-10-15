@@ -596,22 +596,6 @@ uint8_t mos6502::GetY()
    return Y;
 }
 
-void mos6502::IRQ(bool line)
-{
-   irq_line = line;
-}
-
-void mos6502::NMI(bool line)
-{
-   // falling edge triggered
-   if (nmi_line == true && line == false) {
-      if (!nmi_handling) {
-         nmi_pending = true;
-      }
-   }
-   nmi_line = line;
-}
-
 void mos6502::SetResetS(uint8_t value)
 {
    reset_sp = value;
@@ -667,6 +651,21 @@ void mos6502::Op_ILLEGAL(uint16_t src)
    illegalOpcode = true;
 }
 
+void mos6502::IRQ(bool line)
+{
+   irq_line = line;
+}
+
+void mos6502::NMI(bool line)
+{
+   // falling edge triggered
+   if (nmi_line == true && line == false) {
+      if (!nmi_handling) {
+         nmi_pending = true;
+      }
+   }
+   nmi_line = line;
+}
 
 void mos6502::Op_ADC(uint16_t src)
 {
