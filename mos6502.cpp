@@ -1099,6 +1099,14 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 // (indirect,X) RLA (oper,X)    23      2       8
 // (indirect),Y RLA (oper),Y    33      2       8
 
+   MAKE_INSTR(0x27, RLA, ZER, 5, false);
+   MAKE_INSTR(0x37, RLA, ZEX, 6, false);
+   MAKE_INSTR(0x2F, RLA, ABS, 6, false);
+   MAKE_INSTR(0x3F, RLA, ABX, 7, false);
+   MAKE_INSTR(0x3B, RLA, ABY, 7, false);
+   MAKE_INSTR(0x23, RLA, INX, 8, false);
+   MAKE_INSTR(0x33, RLA, INY, 8, false);
+
 // RRA
 // ROR oper + ADC oper
 // 
@@ -2497,6 +2505,23 @@ void mos6502::Op_LXA(uint16_t src)
    X = A;
    SET_NEGATIVE(A & 0x80);
    SET_ZERO(!A);
+}
+
+void mos6502::Op_RLA(uint16_t src)
+{
+   uint16_t m = Read(src);
+   m <<= 1;
+   if (IF_CARRY()) m |= 0x01;
+   SET_CARRY(m > 0xFF);
+   m &= 0xFF;
+   Write(src, m);
+
+   A &= m;
+
+   SET_NEGATIVE(A & 0x80);
+   SET_ZERO(!A);
+
+   return;
 }
 
 #endif

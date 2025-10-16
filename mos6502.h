@@ -156,6 +156,7 @@ class mos6502
       void Op_LAS(uint16_t src);
       void Op_LAX(uint16_t src);
       void Op_LXA(uint16_t src);
+      void Op_RLA(uint16_t src);
 #endif
 
       void Op_ILLEGAL(uint16_t src);
