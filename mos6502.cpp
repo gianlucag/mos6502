@@ -1206,6 +1206,8 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 // addressing   assembler       opc     bytes   cycles
 // absolute,X   SHY oper,X      9C      3       5       †
 
+   MAKE_INSTR(0x9C, SHY, ABX, 5, false);
+
 // SLO (ASO)
 // ASL oper + ORA oper
 // 
@@ -1221,6 +1223,14 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 // absolute,Y   SLO oper,Y      1B      3       7
 // (indirect,X) SLO (oper,X)    03      2       8
 // (indirect),Y SLO (oper),Y    13      2       8
+
+   MAKE_INSTR(0x07, SLO, ZER, 5, false);
+   MAKE_INSTR(0x17, SLO, ZEX, 6, false);
+   MAKE_INSTR(0x0F, SLO, ABS, 6, false);
+   MAKE_INSTR(0x1F, SLO, ABX, 7, false);
+   MAKE_INSTR(0x1B, SLO, ABY, 7, false);
+   MAKE_INSTR(0x03, SLO, INX, 8, false);
+   MAKE_INSTR(0x13, SLO, INY, 8, false);
 
 // SRE (LSE)
 // LSR oper + EOR oper
@@ -2612,6 +2622,28 @@ void mos6502::Op_SHX(uint16_t src)
    // unstable, but this is the stable behavior
    uint8_t tmp = X & ((src >> 8) + 1);
    Write(src, tmp);
+}
+
+void mos6502::Op_SHY(uint16_t src)
+{
+   // unstable, but this is the stable behavior
+   uint8_t tmp = Y & ((src >> 8) + 1);
+   Write(src, tmp);
+}
+
+void mos6502::Op_SLO(uint16_t src)
+{
+   uint8_t m = Read(src);
+   SET_CARRY(m & 0x80);
+   m <<= 1;
+   m &= 0xFF;
+   Write(src, m);
+
+   A |= m;
+
+   SET_NEGATIVE(A & 0x80);
+   SET_ZERO(!A);
+   return;
 }
 
 #endif
