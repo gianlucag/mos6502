@@ -1175,6 +1175,9 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 // absolute,Y   SHA oper,Y      9F      3       5       †
 // (indirect),Y SHA (oper),Y    93      2       6       †
 
+   MAKE_INSTR(0x9F, SHA, ABY, 5, false);
+   MAKE_INSTR(0x93, SHA, INY, 6, false);
+
 // SHX (A11, SXA, XAS)
 // Stores X AND (high-byte of addr. + 1) at addr.
 // 
@@ -1187,6 +1190,8 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 // -    -       -       -       -       -
 // addressing   assembler       opc     bytes   cycles
 // absolute,Y   SHX oper,Y      9E      3       5       †
+
+   MAKE_INSTR(0x9E, SHX, ABY, 5, false);
 
 // SHY (A11, SYA, SAY)
 // Stores Y AND (high-byte of addr. + 1) at addr.
@@ -2593,6 +2598,20 @@ void mos6502::Op_SBX(uint16_t src)
    X = tmp - m;
 
    SET_NEGATIVE(X & 0x80);
+}
+
+void mos6502::Op_SHA(uint16_t src)
+{
+   // unstable, but this is the stable behavior
+   uint8_t tmp = A & X & ((src >> 8) + 1);
+   Write(src, tmp);
+}
+
+void mos6502::Op_SHX(uint16_t src)
+{
+   // unstable, but this is the stable behavior
+   uint8_t tmp = X & ((src >> 8) + 1);
+   Write(src, tmp);
 }
 
 #endif
