@@ -1159,6 +1159,8 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 // addressing   assembler       opc     bytes   cycles
 // immediate    SBX #oper       CB      2       2
 
+   MAKE_INSTR(0xCB, SBX, IMM, 2, false);
+
 // SHA (AHX, AXA)
 // Stores A AND X AND (high-byte of addr. + 1) at addr.
 // 
@@ -2578,6 +2580,19 @@ void mos6502::Op_RRA(uint16_t src)
 void mos6502::Op_SAX(uint16_t src)
 {
    Write(src, A & X); // most simple illegal here
+}
+
+void mos6502::Op_SBX(uint16_t src)
+{
+   uint16_t m = Read(src);
+   uint8_t tmp = A & X;
+
+   SET_CARRY(tmp >= m);
+   SET_ZERO(tmp == m);
+
+   X = tmp - m;
+
+   SET_NEGATIVE(X & 0x80);
 }
 
 #endif
