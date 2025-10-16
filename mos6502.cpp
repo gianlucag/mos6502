@@ -1045,6 +1045,8 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 // addressing   assembler       opc     bytes   cycles
 // absolute,Y   LAS oper,Y      BB      3       4*
 
+   MAKE_INSTR(0xBB, LAS, ABY, 4, true);
+
 // LAX
 // LDA oper + LDX oper
 // 
@@ -2458,6 +2460,16 @@ void mos6502::Op_ISC(uint16_t src)
    SET_CARRY( tmp >= 0 );
 
    A = tmp & 0xFF;
+   return;
+}
+
+void mos6502::Op_LAS(uint16_t src)
+{
+   uint8_t tmp = Read(src);
+   tmp &= sp;
+   A = X = sp = tmp;
+   SET_NEGATIVE(tmp & 0x80);
+   SET_ZERO(tmp == 0);
    return;
 }
 
