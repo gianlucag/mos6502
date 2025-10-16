@@ -1123,6 +1123,14 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 // (indirect,X) RRA (oper,X)    63      2       8
 // (indirect),Y RRA (oper),Y    73      2       8
 
+   MAKE_INSTR(0x67, RRA, ZER, 5, false);
+   MAKE_INSTR(0x77, RRA, ZEX, 6, false);
+   MAKE_INSTR(0x6F, RRA, ABS, 6, false);
+   MAKE_INSTR(0x7F, RRA, ABX, 7, false);
+   MAKE_INSTR(0x7B, RRA, ABY, 7, false);
+   MAKE_INSTR(0x63, RRA, INX, 8, false);
+   MAKE_INSTR(0x73, RRA, INY, 8, false);
+
 // SAX (AXS, AAX)
 // A and X are put on the bus at the same time (resulting effectively in an AND operation) and stored in M
 // 
@@ -2521,6 +2529,50 @@ void mos6502::Op_RLA(uint16_t src)
    SET_NEGATIVE(A & 0x80);
    SET_ZERO(!A);
 
+   return;
+}
+
+void mos6502::Op_RRA(uint16_t src)
+{
+   uint16_t m = Read(src);
+   bool oldC = false;
+   if (IF_CARRY()) {
+      m |= 0x100;
+      oldC = true;
+   }
+   SET_CARRY(m & 0x01);
+   m >>= 1;
+   m &= 0xFF;
+   Write(src, m);
+
+   unsigned int tmp = m + A + (oldC ? 1 : 0);
+
+   // N and V computed *BEFORE* adjustment
+   SET_NEGATIVE(tmp & 0x80);
+   SET_OVERFLOW(!((A ^ m) & 0x80) && ((A ^ tmp) & 0x80));
+
+   if (IF_DECIMAL())
+   {
+      // see http://www.6502.org/tutorials/decimal_mode.html
+      int AL = ((A & 0xF) + (m & 0xF) + (IF_CARRY() ? 1 : 0));
+      if (AL >= 0xA) {
+         AL = ((AL + 6) & 0xF) + 0x10;
+      }
+      tmp = (m & 0xF0) + (A & 0xF0) + AL;
+      if (tmp >= 0xA0) tmp += 0x60;
+   }
+
+   // Z and C computed *AFTER* adjustment
+   SET_ZERO(!(tmp & 0xFF));
+   SET_CARRY(tmp > 0xFF);
+
+   A = tmp & 0xFF;
+   return;
+
+
+
+   SET_NEGATIVE(m & 0x80);
+   SET_ZERO(!m);
    return;
 }
 
