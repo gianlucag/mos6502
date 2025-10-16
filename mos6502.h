@@ -164,6 +164,7 @@ class mos6502
       void Op_SHX(uint16_t src);
       void Op_SHY(uint16_t src);
       void Op_SLO(uint16_t src);
+      void Op_SRE(uint16_t src);
 #endif
 
       void Op_ILLEGAL(uint16_t src);

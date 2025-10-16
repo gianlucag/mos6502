@@ -1248,6 +1248,14 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 // (indirect,X) SRE (oper,X)    43      2       8
 // (indirect),Y SRE (oper),Y    53      2       8
 
+   MAKE_INSTR(0x47, SRE, ZER, 5, false);
+   MAKE_INSTR(0x57, SRE, ZEX, 6, false);
+   MAKE_INSTR(0x4F, SRE, ABS, 6, false);
+   MAKE_INSTR(0x5F, SRE, ABX, 7, false);
+   MAKE_INSTR(0x5B, SRE, ABY, 7, false);
+   MAKE_INSTR(0x43, SRE, INX, 8, false);
+   MAKE_INSTR(0x53, SRE, INY, 8, false);
+
 // TAS (XAS, SHS)
 // Puts A AND X in SP and stores A AND X AND (high-byte of addr. + 1) at addr.
 // 
@@ -2640,6 +2648,20 @@ void mos6502::Op_SLO(uint16_t src)
    Write(src, m);
 
    A |= m;
+
+   SET_NEGATIVE(A & 0x80);
+   SET_ZERO(!A);
+   return;
+}
+
+void mos6502::Op_SRE(uint16_t src)
+{
+   uint8_t m = Read(src);
+   SET_CARRY(m & 0x01);
+   m >>= 1;
+   Write(src, m);
+
+   A ^= m;
 
    SET_NEGATIVE(A & 0x80);
    SET_ZERO(!A);
