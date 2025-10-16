@@ -162,6 +162,7 @@ class mos6502
       void Op_SBX(uint16_t src);
       void Op_SHA(uint16_t src);
       void Op_SHX(uint16_t src);
+      void Op_SHY(uint16_t src);
 #endif
 
       void Op_ILLEGAL(uint16_t src);
