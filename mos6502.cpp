@@ -1144,6 +1144,11 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 // absolute     SAX oper        8F      3       4
 // (indirect,X) SAX (oper,X)    83      2       6
 
+   MAKE_INSTR(0x87, SAX, ZER, 3, false);
+   MAKE_INSTR(0x97, SAX, ZEY, 4, false);
+   MAKE_INSTR(0x8F, SAX, ABS, 4, false);
+   MAKE_INSTR(0x83, SAX, INX, 6, false);
+
 // SBX (AXS, SAX)
 // CMP and DEX at once, sets flags like CMP
 // 
@@ -2568,12 +2573,11 @@ void mos6502::Op_RRA(uint16_t src)
 
    A = tmp & 0xFF;
    return;
+}
 
-
-
-   SET_NEGATIVE(m & 0x80);
-   SET_ZERO(!m);
-   return;
+void mos6502::Op_SAX(uint16_t src)
+{
+   Write(src, A & X); // most simple illegal here
 }
 
 #endif
