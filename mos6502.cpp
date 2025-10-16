@@ -1003,6 +1003,14 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 // (indirect,X) DCP (oper,X)    C3      2       8
 // (indirect),Y DCP (oper),Y    D3      2       8
 
+   MAKE_INSTR(0xC7, DCP, ZER, 5, false);
+   MAKE_INSTR(0xD7, DCP, ZEX, 6, false);
+   MAKE_INSTR(0xCF, DCP, ABS, 6, false);
+   MAKE_INSTR(0xDF, DCP, ABX, 7, false);
+   MAKE_INSTR(0xDB, DCP, ABY, 7, false);
+   MAKE_INSTR(0xC3, DCP, INX, 8, false);
+   MAKE_INSTR(0xD3, DCP, INY, 8, false);
+
 // ISC (ISB, INS)
 // INC oper + SBC oper
 // 
@@ -2395,6 +2403,19 @@ void mos6502::Op_ARR(uint16_t src)
    SET_OVERFLOW(((A ^ res) & 0x40) != 0);
 
    A = res;
+   return;
+}
+
+void mos6502::Op_DCP(uint16_t src)
+{
+   uint8_t m = Read(src);
+   m = (m - 1) & 0xFF;
+   Write(src, m);
+
+   unsigned int tmp = A - m;
+   SET_CARRY(tmp < 0x100);
+   SET_NEGATIVE(tmp & 0x80);
+   SET_ZERO(!(tmp & 0xFF));
    return;
 }
 
