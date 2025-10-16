@@ -1027,6 +1027,14 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 // (indirect,X) ISC (oper,X)    E3      2       8
 // (indirect),Y ISC (oper),Y    F3      2       8
 
+   MAKE_INSTR(0xE7, ISC, ZER, 5, false);
+   MAKE_INSTR(0xF7, ISC, ZEX, 6, false);
+   MAKE_INSTR(0xEF, ISC, ABS, 6, false);
+   MAKE_INSTR(0xFF, ISC, ABX, 7, false);
+   MAKE_INSTR(0xFB, ISC, ABY, 7, false);
+   MAKE_INSTR(0xE3, ISC, INX, 8, false);
+   MAKE_INSTR(0xF3, ISC, INY, 8, false);
+
 // LAS (LAR)
 // LDA/TSX oper
 // 
@@ -2416,6 +2424,40 @@ void mos6502::Op_DCP(uint16_t src)
    SET_CARRY(tmp < 0x100);
    SET_NEGATIVE(tmp & 0x80);
    SET_ZERO(!(tmp & 0xFF));
+   return;
+}
+
+void mos6502::Op_ISC(uint16_t src)
+{
+   uint8_t m = Read(src);
+
+   // from Op_INC
+   m = (m + 1) & 0xFF;
+   Write(src, m);
+
+   // from here on is Op_SBC
+   int tmp     = A - m - (IF_CARRY() ? 0 : 1);
+
+   // N and V computed *BEFORE* adjustment (binary semantics)
+   SET_NEGATIVE(tmp & 0x80 );
+   SET_OVERFLOW(((A ^ m) & (A ^ tmp) & 0x80) != 0);
+
+   if (IF_DECIMAL())
+   {
+      // see http://www.6502.org/tutorials/decimal_mode.html
+      int AL = (A & 0x0F) - (m & 0x0F) - (IF_CARRY() ? 0 : 1);
+      if (AL < 0) {
+         AL = ((AL - 6) & 0x0F) - 0x10;
+      }
+      tmp = (A & 0xF0) - (m & 0xF0) + AL;
+      if (tmp < 0) tmp -= 0x60;
+   }
+
+   // Z and C computed *AFTER* adjustment
+   SET_ZERO(!(tmp & 0xFF));
+   SET_CARRY( tmp >= 0 );
+
+   A = tmp & 0xFF;
    return;
 }
 
