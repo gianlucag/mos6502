@@ -73,7 +73,7 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 
 // ADC
 // Add Memory to Accumulator with Carry
-// 
+//
 // A + M + C -> A, C
 // N    Z       C       I       D       V
 // +    +       +       -       -       +
@@ -98,7 +98,7 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 
 // AND
 // AND Memory with Accumulator
-// 
+//
 // A AND M -> A
 // N    Z       C       I       D       V
 // +    +       -       -       -       -
@@ -123,7 +123,7 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 
 // ASL
 // Shift Left One Bit (Memory or Accumulator)
-// 
+//
 // C <- [76543210] <- 0
 // N    Z       C       I       D       V
 // +    +       +       -       -       -
@@ -142,7 +142,7 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 
 // BCC
 // Branch on Carry Clear
-// 
+//
 // branch on C = 0
 // N    Z       C       I       D       V
 // -    -       -       -       -       -
@@ -153,7 +153,7 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 
 // BCS
 // Branch on Carry Set
-// 
+//
 // branch on C = 1
 // N    Z       C       I       D       V
 // -    -       -       -       -       -
@@ -164,7 +164,7 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 
 // BEQ
 // Branch on Result Zero
-// 
+//
 // branch on Z = 1
 // N    Z       C       I       D       V
 // -    -       -       -       -       -
@@ -175,15 +175,15 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 
 // BIT
 // Test Bits in Memory with Accumulator
-// 
+//
 // bits 7 and 6 of operand are transfered to bit 7 and 6 of SR (N,V);
 // the zero-flag is set according to the result of the operand AND
 // the accumulator (set, if the result is zero, unset otherwise).
 // This allows a quick check of a few bits at once without affecting
 // any of the registers, other than the status register (SR).
-// 
+//
 // → Further details.
-// 
+//
 // A AND M -> Z, M7 -> N, M6 -> V
 // N    Z       C       I       D       V
 // M7   +       -       -       -       M6
@@ -196,7 +196,7 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 
 // BMI
 // Branch on Result Minus
-// 
+//
 // branch on N = 1
 // N    Z       C       I       D       V
 // -    -       -       -       -       -
@@ -207,7 +207,7 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 
 // BNE
 // Branch on Result not Zero
-// 
+//
 // branch on Z = 0
 // N    Z       C       I       D       V
 // -    -       -       -       -       -
@@ -218,7 +218,7 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 
 // BPL
 // Branch on Result Plus
-// 
+//
 // branch on N = 0
 // N    Z       C       I       D       V
 // -    -       -       -       -       -
@@ -229,7 +229,7 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 
 // BRK
 // Force Break
-// 
+//
 // BRK initiates a software interrupt similar to a hardware
 // interrupt (IRQ). The return address pushed to the stack is
 // PC+2, providing an extra byte of spacing for a break mark
@@ -238,9 +238,9 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 // flag set to 1. However, when retrieved during RTI or by a PLP
 // instruction, the break flag will be ignored.
 // The interrupt disable flag is not set automatically.
-// 
+//
 // → Further details.
-// 
+//
 // interrupt,
 // push PC+2, push SR
 // N    Z       C       I       D       V
@@ -252,7 +252,7 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 
 // BVC
 // Branch on Overflow Clear
-// 
+//
 // branch on V = 0
 // N    Z       C       I       D       V
 // -    -       -       -       -       -
@@ -263,7 +263,7 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 
 // BVS
 // Branch on Overflow Set
-// 
+//
 // branch on V = 1
 // N    Z       C       I       D       V
 // -    -       -       -       -       -
@@ -274,7 +274,7 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 
 // CLC
 // Clear Carry Flag
-// 
+//
 // 0 -> C
 // N    Z       C       I       D       V
 // -    -       0       -       -       -
@@ -285,7 +285,7 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 
 // CLD
 // Clear Decimal Mode
-// 
+//
 // 0 -> D
 // N    Z       C       I       D       V
 // -    -       -       -       0       -
@@ -296,7 +296,7 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 
 // CLI
 // Clear Interrupt Disable Bit
-// 
+//
 // 0 -> I
 // N    Z       C       I       D       V
 // -    -       -       0       -       -
@@ -307,7 +307,7 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 
 // CLV
 // Clear Overflow Flag
-// 
+//
 // 0 -> V
 // N    Z       C       I       D       V
 // -    -       -       -       -       0
@@ -318,7 +318,7 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 
 // CMP
 // Compare Memory with Accumulator
-// 
+//
 // A - M
 // N    Z       C       I       D       V
 // +    +       +       -       -       -
@@ -343,7 +343,7 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 
 // CPX
 // Compare Memory and Index X
-// 
+//
 // X - M
 // N    Z       C       I       D       V
 // +    +       +       -       -       -
@@ -358,7 +358,7 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 
 // CPY
 // Compare Memory and Index Y
-// 
+//
 // Y - M
 // N    Z       C       I       D       V
 // +    +       +       -       -       -
@@ -373,7 +373,7 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 
 // DEC
 // Decrement Memory by One
-// 
+//
 // M - 1 -> M
 // N    Z       C       I       D       V
 // +    +       -       -       -       -
@@ -390,7 +390,7 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 
 // DEX
 // Decrement Index X by One
-// 
+//
 // X - 1 -> X
 // N    Z       C       I       D       V
 // +    +       -       -       -       -
@@ -401,7 +401,7 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 
 // DEY
 // Decrement Index Y by One
-// 
+//
 // Y - 1 -> Y
 // N    Z       C       I       D       V
 // +    +       -       -       -       -
@@ -412,7 +412,7 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 
 // EOR
 // Exclusive-OR Memory with Accumulator
-// 
+//
 // A EOR M -> A
 // N    Z       C       I       D       V
 // +    +       -       -       -       -
@@ -437,7 +437,7 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 
 // INC
 // Increment Memory by One
-// 
+//
 // M + 1 -> M
 // N    Z       C       I       D       V
 // +    +       -       -       -       -
@@ -454,7 +454,7 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 
 // INX
 // Increment Index X by One
-// 
+//
 // X + 1 -> X
 // N    Z       C       I       D       V
 // +    +       -       -       -       -
@@ -465,7 +465,7 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 
 // INY
 // Increment Index Y by One
-// 
+//
 // Y + 1 -> Y
 // N    Z       C       I       D       V
 // +    +       -       -       -       -
@@ -476,7 +476,7 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 
 // JMP
 // Jump to New Location
-// 
+//
 // operand 1st byte -> PCL
 // operand 2nd byte -> PCH
 // N    Z       C       I       D       V
@@ -490,7 +490,7 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 
 // JSR
 // Jump to New Location Saving Return Address
-// 
+//
 // push (PC+2),
 // operand 1st byte -> PCL
 // operand 2nd byte -> PCH
@@ -503,7 +503,7 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 
 // LDA
 // Load Accumulator with Memory
-// 
+//
 // M -> A
 // N    Z       C       I       D       V
 // +    +       -       -       -       -
@@ -528,7 +528,7 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 
 // LDX
 // Load Index X with Memory
-// 
+//
 // M -> X
 // N    Z       C       I       D       V
 // +    +       -       -       -       -
@@ -547,7 +547,7 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 
 // LDY
 // Load Index Y with Memory
-// 
+//
 // M -> Y
 // N    Z       C       I       D       V
 // +    +       -       -       -       -
@@ -566,7 +566,7 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 
 // LSR
 // Shift One Bit Right (Memory or Accumulator)
-// 
+//
 // 0 -> [76543210] -> C
 // N    Z       C       I       D       V
 // 0    +       +       -       -       -
@@ -585,7 +585,7 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 
 // NOP
 // No Operation
-// 
+//
 // ---
 // N    Z       C       I       D       V
 // -    -       -       -       -       -
@@ -596,7 +596,7 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 
 // ORA
 // OR Memory with Accumulator
-// 
+//
 // A OR M -> A
 // N    Z       C       I       D       V
 // +    +       -       -       -       -
@@ -621,7 +621,7 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 
 // PHA
 // Push Accumulator on Stack
-// 
+//
 // push A
 // N    Z       C       I       D       V
 // -    -       -       -       -       -
@@ -632,10 +632,10 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 
 // PHP
 // Push Processor Status on Stack
-// 
+//
 // The status register will be pushed with the break
 // flag and bit 5 set to 1.
-// 
+//
 // push SR
 // N    Z       C       I       D       V
 // -    -       -       -       -       -
@@ -646,7 +646,7 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 
 // PLA
 // Pull Accumulator from Stack
-// 
+//
 // pull A
 // N    Z       C       I       D       V
 // +    +       -       -       -       -
@@ -657,10 +657,10 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 
 // PLP
 // Pull Processor Status from Stack
-// 
+//
 // The status register will be pulled with the break
 // flag and bit 5 ignored.
-// 
+//
 // pull SR
 // N    Z       C       I       D       V
 // from stack
@@ -671,7 +671,7 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 
 // ROL
 // Rotate One Bit Left (Memory or Accumulator)
-// 
+//
 // C <- [76543210] <- C
 // N    Z       C       I       D       V
 // +    +       +       -       -       -
@@ -690,7 +690,7 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 
 // ROR
 // Rotate One Bit Right (Memory or Accumulator)
-// 
+//
 // C -> [76543210] -> C
 // N    Z       C       I       D       V
 // +    +       +       -       -       -
@@ -709,10 +709,10 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 
 // RTI
 // Return from Interrupt
-// 
+//
 // The status register is pulled with the break flag
 // and bit 5 ignored. Then PC is pulled from the stack.
-// 
+//
 // pull SR, pull PC
 // N    Z       C       I       D       V
 // from stack
@@ -723,7 +723,7 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 
 // RTS
 // Return from Subroutine
-// 
+//
 // pull PC, PC+1 -> PC
 // N    Z       C       I       D       V
 // -    -       -       -       -       -
@@ -734,7 +734,7 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 
 // SBC
 // Subtract Memory from Accumulator with Borrow
-// 
+//
 // A - M - C̅ -> A
 // N    Z       C       I       D       V
 // +    +       +       -       -       +
@@ -759,7 +759,7 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 
 // SEC
 // Set Carry Flag
-// 
+//
 // 1 -> C
 // N    Z       C       I       D       V
 // -    -       1       -       -       -
@@ -770,7 +770,7 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 
 // SED
 // Set Decimal Flag
-// 
+//
 // 1 -> D
 // N    Z       C       I       D       V
 // -    -       -       -       1       -
@@ -781,7 +781,7 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 
 // SEI
 // Set Interrupt Disable Status
-// 
+//
 // 1 -> I
 // N    Z       C       I       D       V
 // -    -       -       1       -       -
@@ -792,7 +792,7 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 
 // STA
 // Store Accumulator in Memory
-// 
+//
 // A -> M
 // N    Z       C       I       D       V
 // -    -       -       -       -       -
@@ -815,7 +815,7 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 
 // STX
 // Store Index X in Memory
-// 
+//
 // X -> M
 // N    Z       C       I       D       V
 // -    -       -       -       -       -
@@ -830,7 +830,7 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 
 // STY
 // Sore Index Y in Memory
-// 
+//
 // Y -> M
 // N    Z       C       I       D       V
 // -    -       -       -       -       -
@@ -845,7 +845,7 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 
 // TAX
 // Transfer Accumulator to Index X
-// 
+//
 // A -> X
 // N    Z       C       I       D       V
 // +    +       -       -       -       -
@@ -856,7 +856,7 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 
 // TAY
 // Transfer Accumulator to Index Y
-// 
+//
 // A -> Y
 // N    Z       C       I       D       V
 // +    +       -       -       -       -
@@ -867,7 +867,7 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 
 // TSX
 // Transfer Stack Pointer to Index X
-// 
+//
 // SP -> X
 // N    Z       C       I       D       V
 // +    +       -       -       -       -
@@ -878,7 +878,7 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 
 // TXA
 // Transfer Index X to Accumulator
-// 
+//
 // X -> A
 // N    Z       C       I       D       V
 // +    +       -       -       -       -
@@ -889,7 +889,7 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 
 // TXS
 // Transfer Index X to Stack Register
-// 
+//
 // X -> SP
 // N    Z       C       I       D       V
 // -    -       -       -       -       -
@@ -900,7 +900,7 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 
 // TYA
 // Transfer Index Y to Accumulator
-// 
+//
 // Y -> A
 // N    Z       C       I       D       V
 // +    +       -       -       -       -
@@ -913,9 +913,9 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 
 // ALR (ASR)
 // AND oper + LSR
-// 
+//
 // A AND oper, 0 -> [76543210] -> C
-// 
+//
 // N    Z       C       I       D       V
 // +    +       +       -       -       -
 // addressing   assembler       opc     bytes   cycles
@@ -925,9 +925,9 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 
 // ANC
 // AND oper + set C as ASL
-// 
+//
 // A AND oper, bit(7) -> C
-// 
+//
 // N    Z       C       I       D       V
 // +    +       +       -       -       -
 // addressing   assembler       opc     bytes   cycles
@@ -937,11 +937,11 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 
 // ANC (ANC2)
 // AND oper + set C as ROL
-// 
+//
 // effectively the same as instr. 0B
-// 
+//
 // A AND oper, bit(7) -> C
-// 
+//
 // N    Z       C       I       D       V
 // +    +       +       -       -       -
 // addressing   assembler       opc     bytes   cycles
@@ -951,17 +951,17 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 
 // ANE (XAA)
 // * OR X + AND oper
-// 
+//
 // Highly unstable, do not use.
-// 
+//
 // A base value in A is determined based on the contets of A and a constant,
 // which may be typically $00, $ff, $ee, etc. The value of this constant
 // depends on temperature, the chip series, and maybe other factors, as well.
 // In order to eliminate these uncertaincies from the equation, use either 0
 // as the operand or a value of $FF in the accumulator.
-// 
+//
 // (A OR CONST) AND X AND oper -> A
-// 
+//
 // N    Z       C       I       D       V
 // +    +       -       -       -       -
 // addressing   assembler       opc     bytes   cycles
@@ -971,13 +971,13 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 
 // ARR
 // AND oper + ROR
-// 
+//
 // This operation involves the adder:
 // V-flag is set according to (A AND oper) + oper
 // The carry is not set, but bit 7 (sign) is exchanged with the carry
-// 
+//
 // A AND oper, C -> [76543210] -> C
-// 
+//
 // N    Z       C       I       D       V
 // +    +       +       -       -       +
 // addressing   assembler       opc     bytes   cycles
@@ -987,11 +987,11 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 
 // DCP (DCM)
 // DEC oper + CMP oper
-// 
+//
 // M - 1 -> M, A - M
-// 
+//
 // Decrements the operand and then compares the result to the accumulator.
-// 
+//
 // N    Z       C       I       D       V
 // +    +       +       -       -       -
 // addressing   assembler       opc     bytes   cycles
@@ -1013,9 +1013,9 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 
 // ISC (ISB, INS)
 // INC oper + SBC oper
-// 
+//
 // M + 1 -> M, A - M - C̅ -> A
-// 
+//
 // N    Z       C       I       D       V
 // +    +       +       -       -       +
 // addressing   assembler       opc     bytes   cycles
@@ -1037,9 +1037,9 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 
 // LAS (LAR)
 // LDA/TSX oper
-// 
+//
 // M AND SP -> A, X, SP
-// 
+//
 // N    Z       C       I       D       V
 // +    +       -       -       -       -
 // addressing   assembler       opc     bytes   cycles
@@ -1049,9 +1049,9 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 
 // LAX
 // LDA oper + LDX oper
-// 
+//
 // M -> A -> X
-// 
+//
 // N    Z       C       I       D       V
 // +    +       -       -       -       -
 // addressing   assembler       opc     bytes   cycles
@@ -1071,11 +1071,11 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 
 // LXA (LAX immediate)
 // Store * AND oper in A and X
-// 
+//
 // Highly unstable, involves a 'magic' constant, see ANE
-// 
+//
 // (A OR CONST) AND oper -> A -> X
-// 
+//
 // N    Z       C       I       D       V
 // +    +       -       -       -       -
 // addressing   assembler       opc     bytes   cycles
@@ -1085,9 +1085,9 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 
 // RLA
 // ROL oper + AND oper
-// 
+//
 // M = C <- [76543210] <- C, A AND M -> A
-// 
+//
 // N    Z       C       I       D       V
 // +    +       +       -       -       -
 // addressing   assembler       opc     bytes   cycles
@@ -1109,9 +1109,9 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 
 // RRA
 // ROR oper + ADC oper
-// 
+//
 // M = C -> [76543210] -> C, A + M + C -> A, C
-// 
+//
 // N    Z       C       I       D       V
 // +    +       +       -       -       +
 // addressing   assembler       opc     bytes   cycles
@@ -1133,9 +1133,9 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 
 // SAX (AXS, AAX)
 // A and X are put on the bus at the same time (resulting effectively in an AND operation) and stored in M
-// 
+//
 // A AND X -> M
-// 
+//
 // N    Z       C       I       D       V
 // -    -       -       -       -       -
 // addressing   assembler       opc     bytes   cycles
@@ -1151,9 +1151,9 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 
 // SBX (AXS, SAX)
 // CMP and DEX at once, sets flags like CMP
-// 
+//
 // (A AND X) - oper -> X
-// 
+//
 // N    Z       C       I       D       V
 // +    +       +       -       -       -
 // addressing   assembler       opc     bytes   cycles
@@ -1163,12 +1163,12 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 
 // SHA (AHX, AXA)
 // Stores A AND X AND (high-byte of addr. + 1) at addr.
-// 
+//
 // unstable: sometimes 'AND (H+1)' is dropped, page boundary crossings
 // may not work (with the high-byte of the value used as the high-byte of the address)
-// 
+//
 // A AND X AND (H+1) -> M
-// 
+//
 // N    Z       C       I       D       V
 // -    -       -       -       -       -
 // addressing   assembler       opc     bytes   cycles
@@ -1180,12 +1180,12 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 
 // SHX (A11, SXA, XAS)
 // Stores X AND (high-byte of addr. + 1) at addr.
-// 
+//
 // unstable: sometimes 'AND (H+1)' is dropped, page boundary
 // crossings may not work (with the high-byte of the value used as the high-byte of the address)
-// 
+//
 // X AND (H+1) -> M
-// 
+//
 // N    Z       C       I       D       V
 // -    -       -       -       -       -
 // addressing   assembler       opc     bytes   cycles
@@ -1195,12 +1195,12 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 
 // SHY (A11, SYA, SAY)
 // Stores Y AND (high-byte of addr. + 1) at addr.
-// 
+//
 // unstable: sometimes 'AND (H+1)' is dropped, page boundary
 // crossings may not work (with the high-byte of the value used as the high-byte of the address)
-// 
+//
 // Y AND (H+1) -> M
-// 
+//
 // N    Z       C       I       D       V
 // -    -       -       -       -       -
 // addressing   assembler       opc     bytes   cycles
@@ -1210,9 +1210,9 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 
 // SLO (ASO)
 // ASL oper + ORA oper
-// 
+//
 // M = C <- [76543210] <- 0, A OR M -> A
-// 
+//
 // N    Z       C       I       D       V
 // +    +       +       -       -       -
 // addressing   assembler       opc     bytes   cycles
@@ -1234,9 +1234,9 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 
 // SRE (LSE)
 // LSR oper + EOR oper
-// 
+//
 // M = 0 -> [76543210] -> C, A EOR M -> A
-// 
+//
 // N    Z       C       I       D       V
 // +    +       +       -       -       -
 // addressing   assembler       opc     bytes   cycles
@@ -1258,12 +1258,12 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 
 // TAS (XAS, SHS)
 // Puts A AND X in SP and stores A AND X AND (high-byte of addr. + 1) at addr.
-// 
+//
 // unstable: sometimes 'AND (H+1)' is dropped, page boundary
 // crossings may not work (with the high-byte of the value used as the high-byte of the address)
-// 
+//
 // A AND X -> SP, A AND X AND (H+1) -> M
-// 
+//
 // N    Z       C       I       D       V
 // -    -       -       -       -       -
 // addressing   assembler       opc     bytes   cycles
@@ -1273,11 +1273,11 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 
 // USBC (SBC)
 // SBC oper + NOP
-// 
+//
 // effectively same as normal SBC immediate, instr. E9.
-// 
+//
 // A - M - C̅ -> A
-// 
+//
 // N    Z       C       I       D       V
 // +    +       +       -       -       +
 // addressing   assembler       opc     bytes   cycles
@@ -1287,7 +1287,7 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 
 // NOPs (including DOP, TOP)
 // Instructions effecting in 'no operations' in various address modes. Operands are ignored.
-// 
+//
 // N    Z       C       I       D       V
 // -    -       -       -       -       -
 // opc  addressing      bytes   cycles
@@ -1359,9 +1359,9 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 
 // JAM (KIL, HLT)
 // These instructions freeze the CPU.
-// 
+//
 // The processor will be trapped infinitely in T1 phase with $FF on the data bus. — Reset required.
-// 
+//
 // Instruction codes: 02, 12, 22, 32, 42, 52, 62, 72, 92, B2, D2, F2
 
    MAKE_INSTR(0x02, ILLEGAL, IMP, 0, false);
@@ -2437,7 +2437,7 @@ void mos6502::Op_ANE(uint16_t src)
 // A base value in A is determined based on the contets of A and a constant,
 // which may be typically $00, $ff, $ee, etc. The value of this constant
 // depends on temperature, the chip series, and maybe other factors, as well.
-   const uint8_t constant = 0xee; 
+   const uint8_t constant = 0xee;
 
    uint8_t m = Read(src);
    uint8_t res = ((A | constant) & X & m);
