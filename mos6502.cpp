@@ -1081,6 +1081,8 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 // addressing   assembler       opc     bytes   cycles
 // immediate    LXA #oper       AB      2       2       ††
 
+   MAKE_INSTR(0xAB, LXA, IMM, 2, false);
+
 // RLA
 // ROL oper + AND oper
 // 
@@ -2486,6 +2488,15 @@ void mos6502::Op_LAX(uint16_t src)
    SET_NEGATIVE(m & 0x80);
    SET_ZERO(!m);
    A = X = m;
+}
+
+void mos6502::Op_LXA(uint16_t src)
+{
+   uint8_t m = Read(src);
+   A = (A | 0xee) & m;  // like ANE, unstable mystery constant
+   X = A;
+   SET_NEGATIVE(A & 0x80);
+   SET_ZERO(!A);
 }
 
 #endif
