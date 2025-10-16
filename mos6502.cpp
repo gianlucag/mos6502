@@ -1269,6 +1269,8 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 // addressing   assembler       opc     bytes   cycles
 // absolute,Y   TAS oper,Y      9B      3       5       †
 
+   MAKE_INSTR(0x9B, TAS, ABY, 5, false);
+
 // USBC (SBC)
 // SBC oper + NOP
 // 
@@ -2666,6 +2668,15 @@ void mos6502::Op_SRE(uint16_t src)
    SET_NEGATIVE(A & 0x80);
    SET_ZERO(!A);
    return;
+}
+
+void mos6502::Op_TAS(uint16_t src)
+{
+   // unstable, but this is the stable behavior
+   sp = A & X;
+
+   uint8_t tmp = A & X & ((src >> 8) + 1);
+   Write(src, tmp);
 }
 
 #endif
