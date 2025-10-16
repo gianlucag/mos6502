@@ -150,6 +150,7 @@ class mos6502
       void Op_ALR(uint16_t src);
       void Op_ANC(uint16_t src);
       void Op_ANE(uint16_t src);
+      void Op_ARR(uint16_t src);
 #endif
 
       void Op_ILLEGAL(uint16_t src);

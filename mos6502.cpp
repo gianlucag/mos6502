@@ -983,6 +983,8 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 // addressing   assembler       opc     bytes   cycles
 // immediate    ARR #oper       6B      2       2
 
+   MAKE_INSTR(0x6B, ARR, IMM, 2, false);
+
 // DCP (DCM)
 // DEC oper + CMP oper
 // 
@@ -2366,6 +2368,32 @@ void mos6502::Op_ANE(uint16_t src)
    uint8_t res = ((A | constant) & X & m);
    SET_NEGATIVE(res & 0x80);
    SET_ZERO(!res);
+   A = res;
+   return;
+}
+
+void mos6502::Op_ARR(uint16_t src)
+{
+   bool carry = IF_CARRY();
+   uint8_t m = Read(src);
+   uint8_t res = m & A;
+   SET_CARRY(res & 1);
+   res >>= 1;
+   if (carry) {
+      res |= 0x80;
+   }
+   SET_NEGATIVE(res & 0x80);
+   SET_ZERO(!res);
+
+   if (IF_DECIMAL())
+   {
+      // ARR in decimal mode routes signals through the ALU’s decimal
+      // adder path, but with no valid carry-in, so the outputs are
+      // garbage. It’s not emulatable in a meaningful way.
+   }
+
+   SET_OVERFLOW(((A ^ res) & 0x40) != 0);
+
    A = res;
    return;
 }
