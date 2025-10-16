@@ -154,6 +154,7 @@ class mos6502
       void Op_DCP(uint16_t src);
       void Op_ISC(uint16_t src);
       void Op_LAS(uint16_t src);
+      void Op_LAX(uint16_t src);
 #endif
 
       void Op_ILLEGAL(uint16_t src);

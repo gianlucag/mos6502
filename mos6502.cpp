@@ -1062,6 +1062,13 @@ mos6502::mos6502(BusRead r, BusWrite w, ClockCycle c)
 // (indirect,X) LAX (oper,X)    A3      2       6
 // (indirect),Y LAX (oper),Y    B3      2       5*
 
+   MAKE_INSTR(0xA7, LAX, ZER, 3, false);
+   MAKE_INSTR(0xB7, LAX, ZEY, 4, false);
+   MAKE_INSTR(0xAF, LAX, ABS, 4, false);
+   MAKE_INSTR(0xBF, LAX, ABY, 4, true);
+   MAKE_INSTR(0xA3, LAX, INX, 6, false);
+   MAKE_INSTR(0xB3, LAX, INY, 5, true);
+
 // LXA (LAX immediate)
 // Store * AND oper in A and X
 // 
@@ -2471,6 +2478,14 @@ void mos6502::Op_LAS(uint16_t src)
    SET_NEGATIVE(tmp & 0x80);
    SET_ZERO(tmp == 0);
    return;
+}
+
+void mos6502::Op_LAX(uint16_t src)
+{
+   uint8_t m = Read(src);
+   SET_NEGATIVE(m & 0x80);
+   SET_ZERO(!m);
+   A = X = m;
 }
 
 #endif
