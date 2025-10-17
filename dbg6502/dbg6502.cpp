@@ -285,31 +285,106 @@ void do_reset(char *) {
    cpu->Reset();
 }
 
+int parsenum(char *p) {
+   switch (*p) {
+      case 'x':
+      case '$':
+         return strtoul(p + 1, NULL, 16);
+      case 'o':
+      case '@':
+         return strtoul(p + 1, NULL, 8);
+      case 'b':
+      case '%':
+         return strtoul(p + 1, NULL, 2);
+      default:
+         return strtoul(p, NULL, 0); // intentional, to allow 0x hex, 0b binary, and 0 octal
+   }
+}
+
+void do_a(char *p) {
+   p = strchr(p, '=');
+   if (p) {
+      p++;
+      cpu->SetA(parsenum(p));
+   }
+}
+
+void do_x(char *p) {
+   p = strchr(p, '=');
+   if (p) {
+      p++;
+      cpu->SetX(parsenum(p));
+   }
+}
+
+void do_y(char *p) {
+   p = strchr(p, '=');
+   if (p) {
+      p++;
+      cpu->SetY(parsenum(p));
+   }
+}
+
+void do_pc(char *p) {
+   p = strchr(p, '=');
+   if (p) {
+      p++;
+      cpu->SetPC(parsenum(p));
+   }
+}
+
+void do_sp(char *p) {
+   p = strchr(p, '=');
+   if (p) {
+      p++;
+      cpu->SetS(parsenum(p));
+   }
+}
+
+void do_sr(char *p) {
+   p = strchr(p, '=');
+   if (p) {
+      p++;
+      cpu->SetP(parsenum(p));
+   }
+}
+
 void do_help(char *);
 
 struct Commands {
    const char *cmd;
+   const char *args;
    const char *help;
    handler exe;
 } commands[] = {
-   { "reset", "reset the cpu", do_reset },
-   { "quit", "quit the program", do_quit },
-   { "exit", "same as quit", do_quit },
-   { "help", "print help", do_help },
-   { "?",    "same as help", do_help },
+   { "A=",    "<num>", "set the A register", do_a },
+   { "X=",    "<num>", "set the X register", do_x },
+   { "Y=",    "<num>", "set the Y register", do_y },
+   { "PC=",    "<num>", "set the PC", do_pc },
+   { "SR=",    "<num>", "set the STATUS", do_sr },
+   { "SP=",    "<num>", "set the STACK POINTER", do_sp },
+   { "reset", NULL,    "reset the cpu", do_reset },
+   { "reset", NULL,    "reset the cpu", do_reset },
+   { "quit",  NULL,    "quit the program", do_quit },
+   { "exit",  NULL,    "same as quit", do_quit },
+   { "help",  NULL,    "print help", do_help },
+   { "?",     NULL,    "same as help", do_help },
 };
 
 void do_help(char *) {
    displaywin->printf("=== COMMANDS ===");
    for (int i = 0; i < sizeof(commands) / sizeof(commands[0]); i++) {
-      displaywin->printf("%s\t%s", commands[i].cmd, commands[i].help);
+      displaywin->printf("%s%s\t%s", commands[i].cmd, commands[i].args ? commands[i].args : "", commands[i].help);
    }
+   displaywin->printf("================");
+   displaywin->printf("numbers may be entered as $xx (hex), %%bbbbbbbb (binary),");
+   displaywin->printf("   @ooo (octal) or decimal (no prefix)");
    displaywin->printf("================");
 }
 
 void command(char *p) {
    for (int i = 0; i < sizeof(commands) / sizeof(commands[0]); i++) {
-      if (!strncmp(p, commands[i].cmd, strlen(commands[i].cmd))) {
+      if (!strncasecmp(p, commands[i].cmd, strlen(commands[i].cmd))) {
          commands[i].exe(p);
          return;
       }
