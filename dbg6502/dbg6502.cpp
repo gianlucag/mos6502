@@ -1,11 +1,14 @@
+#include <algorithm>
 #include <cstdarg>
 #include <cstring>
 #include <ctype.h>
+#include <dirent.h>
 #include <locale.h>
 #include <ncurses.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <string>
+#include <sys/stat.h>
 #include <vector>
 
 #include "../mos6502.h"
@@ -88,159 +91,274 @@ class MemoryWin : public NcWin {
       uint16_t address;
 };
 
-// A simple terminal-like window with scrolling + input history.
+// --- TerminalWin: scrolling printf + getline with history and TAB completion ---
 class TerminalWin : public NcWin {
-   public:
-      TerminalWin(int x, int y, int w, int h) : NcWin(x, y, w, h) {
-         int H, W; getmaxyx(win, H, W);
-         inner = derwin(win, H - 2, W - 2, 1, 1);   // safe drawing region
-         scrollok(inner, TRUE);
-         keypad(inner, TRUE);
-         wsetscrreg(inner, 0, (H - 2) - 1);
-         wmove(inner, 0, 0);
-         wrefresh(win);
-         wrefresh(inner);
-      }
+public:
+    TerminalWin(int x, int y, int w, int h) : NcWin(x, y, w, h) {
+        int H, W; getmaxyx(win, H, W);
+        inner = derwin(win, H - 2, W - 2, 1, 1);   // draw inside border
+        scrollok(inner, TRUE);
+        keypad(inner, TRUE);
+        wsetscrreg(inner, 0, (H - 2) - 1);
+        wmove(inner, 0, 0);
+        wrefresh(win);
+        wrefresh(inner);
+    }
 
-      ~TerminalWin() override {
-         if (inner) { delwin(inner); inner = nullptr; }
-      }
+    ~TerminalWin() override { if (inner) { delwin(inner); inner = nullptr; } }
 
-      void printf(const char* fmt, ...) {
-         va_list args; va_start(args, fmt);
-         vw_printw(inner, fmt, args);
-         va_end(args);
-         waddch(inner, '\n');
-         wrefresh(inner);
-      }
+    void printf(const char* fmt, ...) {
+        va_list args; va_start(args, fmt);
+        vw_printw(inner, fmt, args);
+        va_end(args);
+        waddch(inner, '\n');
+        wrefresh(inner);
+    }
 
-      // Reads a line with prompt; echoes input; supports backspace and ↑/↓ history (64 lines).
-      // NOTE: Caller should provide a buffer large enough for expected input.
-      void getline(const char* prompt, char* buffer) {
-         // Ensure cursor visible (blinking is terminal-dependent)
-         curs_set(1);
+    // getline: prompt + echo + backspace + 64-entry history + DOS-style TAB cycling
+    void getline(const char* prompt, char* buffer) {
+        curs_set(1);
 
-         // Move to next line if not at column 0
-         int cy, cx; getyx(inner, cy, cx);
-         if (cx != 0) { waddch(inner, '\n'); getyx(inner, cy, cx); }
+        // Start new line if cursor not at column 0
+        int cy, cx; getyx(inner, cy, cx);
+        if (cx != 0) { waddch(inner, '\n'); }
 
-         // Write prompt and start fresh input
-         std::string current;
-         int H, W; getmaxyx(inner, H, W);
-         draw_line(prompt, current);
+        std::string current;
+        draw_line(prompt, current);
 
-         // history navigation: index -1 means editing current line
-         int hist_index = -1; // 0 = oldest, size()-1 = newest
+        int hist_index = -1;
 
-         while (true) {
+        // Completion session state
+        bool comp_active = false;           // true after first TAB until any edit
+        int  comp_word_start = 0;
+        std::string comp_base;
+        std::vector<std::string> comp_matches;
+        int  comp_index = 0;
+
+        auto reset_completion = [&](){
+            comp_active = false;
+            comp_matches.clear();
+            comp_index = 0;
+        };
+
+        while (true) {
             int ch = wgetch(inner);
+
+            // ENTER: accept input
             if (ch == '\n' || ch == '\r') {
-               // finalize line
-               waddch(inner, '\n');
-               // store into history (skip empty duplicates at tail)
-               if (!current.empty()) {
-                  if (history.empty() || history.back() != current) {
-                     history.push_back(current);
-                     if (history.size() > kMaxHistory) history.erase(history.begin());
-                  }
-               }
-               // copy to caller buffer
-               std::strcpy(buffer, current.c_str());
-               wrefresh(inner);
-               curs_set(0);
-               return;
+                waddch(inner, '\n');
+                if (!current.empty()) {
+                    if (history.empty() || history.back() != current) {
+                        history.push_back(current);
+                        if (history.size() > kMaxHistory) history.erase(history.begin());
+                    }
+                }
+                std::strcpy(buffer, current.c_str());
+                wrefresh(inner);
+                curs_set(0);
+                return;
             }
 
-            switch (ch) {
-               case KEY_BACKSPACE:
-               case 127:
-               case 8:
-                  if (!current.empty()) {
-                     current.pop_back();
-                     draw_line(prompt, current);
-                  }
-                  break;
+            // TAB: compute or cycle filename completions for last token
+            if (ch == '\t') {
+                prepare_completion_state(current,
+                                         comp_active,
+                                         comp_word_start,
+                                         comp_base,
+                                         comp_matches,
+                                         comp_index);
+                if (!comp_matches.empty()) {
+                    // Replace token with the candidate at comp_index, then advance index
+                    current.replace(comp_word_start, current.size() - comp_word_start,
+                                    comp_matches[comp_index]);
+                    draw_line(prompt, current);
+                    comp_index = (comp_index + 1) % static_cast<int>(comp_matches.size());
+                } else {
+                    beep();
+                }
+                continue;
+            }
 
-               case KEY_UP:
-                  if (!history.empty()) {
-                     if (hist_index < 0) hist_index = static_cast<int>(history.size()) - 1;
-                     else if (hist_index > 0) hist_index--;
-                     current = history[hist_index];
-                     draw_line(prompt, current);
-                  }
-                  break;
-
-               case KEY_DOWN:
-                  if (!history.empty() && hist_index >= 0) {
-                     if (hist_index < static_cast<int>(history.size()) - 1) {
+            // History navigation
+            if (ch == KEY_UP) {
+                if (!history.empty()) {
+                    if (hist_index < 0) hist_index = static_cast<int>(history.size()) - 1;
+                    else if (hist_index > 0) hist_index--;
+                    current = history[hist_index];
+                    draw_line(prompt, current);
+                }
+                reset_completion();
+                continue;
+            }
+            if (ch == KEY_DOWN) {
+                if (!history.empty() && hist_index >= 0) {
+                    if (hist_index < static_cast<int>(history.size()) - 1) {
                         hist_index++;
                         current = history[hist_index];
-                     } else {
+                    } else {
                         hist_index = -1;
                         current.clear();
-                     }
-                     draw_line(prompt, current);
-                  }
-                  break;
-
-               case KEY_LEFT:
-               case KEY_RIGHT:
-               case KEY_HOME:
-               case KEY_END:
-                  // Keep it simple: no in-line editing; ignore navigation keys.
-                  // (Could be added later by tracking an insertion cursor.)
-                  break;
-
-               default:
-                  if (is_printable(ch)) {
-                     // Prevent drawing beyond the line width; wrap naturally by newline if needed.
-                     // We’ll clamp visual width to W-1 (prompt + text).
-                     int prompt_len = visual_len(prompt);
-                     if (prompt_len + (int)current.size() < W - 1) {
-                        current.push_back(static_cast<char>(ch));
-                        draw_line(prompt, current);
-                     } else {
-                        // If full, behave like a bell
-                        beep();
-                     }
-                  }
-                  break;
+                    }
+                    draw_line(prompt, current);
+                }
+                reset_completion();
+                continue;
             }
-         }
-      }
 
-   private:
-      WINDOW* inner{};
-      static constexpr size_t kMaxHistory = 64;
-      std::vector<std::string> history;
+            // Backspace
+            if (ch == KEY_BACKSPACE || ch == 127 || ch == 8) {
+                if (!current.empty()) {
+                    current.pop_back();
+                    draw_line(prompt, current);
+                } else {
+                    beep();
+                }
+                reset_completion();
+                continue;
+            }
 
-      static bool is_printable(int ch) {
-         return ch >= 32 && ch <= 126;
-      }
+            // Ignore lateral nav for now (keeps logic simple)
+            if (ch == KEY_LEFT || ch == KEY_RIGHT || ch == KEY_HOME || ch == KEY_END) {
+                reset_completion();
+                continue;
+            }
 
-      static int visual_len(const char* s) {
-         // ASCII only here; if you need UTF-8 width, use wcwidth/mbstowcs.
-         int n = 0; while (s && *s) { n++; s++; } return n;
-      }
+            // Printable ASCII
+            if (is_printable(ch)) {
+                int H, W; getmaxyx(inner, H, W);
+                int prompt_len = (int)std::strlen(prompt);
+                if (prompt_len + (int)current.size() < W - 1) {
+                    current.push_back((char)ch);
+                    draw_line(prompt, current);
+                } else {
+                    beep();
+                }
+                reset_completion();
+                continue;
+            }
 
-      void draw_line(const char* prompt, const std::string& text) {
-         int y, x; getyx(inner, y, x);
-         // Move to start of current line (create one if we’re at end)
-         // If we’re beyond last line, inner will scroll automatically.
-         wmove(inner, y, 0);
-         wclrtoeol(inner);
-         waddstr(inner, prompt);
-         waddnstr(inner, text.c_str(), (int)text.size());
-         // Place cursor at end of input
-         getyx(inner, y, x);
-         wrefresh(inner);
-      }
+            // Unknown key: ignore, but end any completion session
+            reset_completion();
+        }
+    }
+
+private:
+    WINDOW* inner{};
+    static constexpr size_t kMaxHistory = 64;
+    std::vector<std::string> history;
+
+    static bool is_printable(int ch) { return ch >= 32 && ch <= 126; }
+
+    void draw_line(const char* prompt, const std::string& text) {
+        int y, x; getyx(inner, y, x);
+        wmove(inner, y, 0);
+        wclrtoeol(inner);
+        waddstr(inner, prompt);
+        waddnstr(inner, text.c_str(), (int)text.size());
+        wrefresh(inner);
+    }
+
+    // -------- Completion core --------
+
+    // Build candidates once per TAB session; do NOT rebuild while cycling.
+    void prepare_completion_state(const std::string& current,
+                                  bool& comp_active,
+                                  int& comp_word_start,
+                                  std::string& comp_base,
+                                  std::vector<std::string>& comp_matches,
+                                  int& comp_index)
+    {
+        if (comp_active) return; // already cycling on this input
+
+        comp_matches.clear();
+        comp_index = 0;
+
+        // Last space-delimited token
+        comp_word_start = (int)current.find_last_of(' ');
+        comp_word_start = (comp_word_start == (int)std::string::npos) ? 0 : comp_word_start + 1;
+        comp_base = current.substr(comp_word_start);
+
+        // Split into dir + base; if token ends with slash, browse that dir (base="")
+        std::string dirpath, base;
+        bool ends_with_slash = !comp_base.empty() &&
+                               (comp_base.back() == '/' || comp_base.back() == '\\');
+        split_path(comp_base, dirpath, base);
+        if (ends_with_slash) base.clear();
+
+        // List matches; when browsing a directory after trailing slash, list all entries
+        comp_matches = list_matches(dirpath, base, /*browse_all=*/ends_with_slash);
+
+        // Convert to replacements relative to original token
+        for (std::string& m : comp_matches) m = join_path(dirpath, m);
+        std::sort(comp_matches.begin(), comp_matches.end());
+
+        comp_active = true; // start cycling
+    }
+
+    static void split_path(const std::string& token, std::string& dir, std::string& base) {
+        auto pos = token.find_last_of("/\\");
+        if (pos == std::string::npos) {
+            dir = ".";
+            base = token;
+        } else {
+            dir  = token.substr(0, pos + 1);
+            base = token.substr(pos + 1);
+            if (dir.empty()) dir = "/";
+        }
+    }
+
+    static std::string join_path(const std::string& dir, const std::string& name) {
+        if (dir == "." || dir.empty()) return name;
+        char last = dir.back();
+        if (last == '/' || last == '\\') return dir + name;
+        return dir + "/" + name;
+    }
+
+    static bool is_dir(const std::string& path) {
+        struct stat st{};
+        if (stat(path.c_str(), &st) == 0) return S_ISDIR(st.st_mode);
+        return false;
+    }
+
+    // List directory entries starting with base; if browse_all, list everything.
+    // Skip "." and ".." to avoid creeping with "../<TAB>".
+    static std::vector<std::string> list_matches(const std::string& dir,
+                                                 const std::string& base,
+                                                 bool browse_all)
+    {
+        std::vector<std::string> out;
+        DIR* d = opendir(dir.c_str());
+        if (!d) return out;
+
+        bool show_hidden = browse_all ? true : (!base.empty() && base[0] == '.');
+
+        for (dirent* ent; (ent = readdir(d)); ) {
+            std::string name = ent->d_name;
+            if (name == "." || name == "..") continue;
+            if (!show_hidden && !name.empty() && name[0] == '.') continue;
+
+            if (browse_all || starts_with(name, base)) {
+                std::string full = (dir == ".") ? name : join_path(dir, name);
+                if (is_dir((dir == ".") ? name : full)) name += "/";
+                out.push_back(name);
+            }
+        }
+        closedir(d);
+        return out;
+    }
+
+    static bool starts_with(const std::string& s, const std::string& prefix) {
+        if (prefix.size() > s.size()) return false;
+        return std::equal(prefix.begin(), prefix.end(), s.begin());
+    }
 };
 
 void setup_ncurses(void) {
    setlocale(LC_ALL, "");     // enable line/box chars in UTF-8 terminals
    initscr();
-   noecho(); curs_set(0);
+   noecho();
+   keypad(stdscr, TRUE);
+   curs_set(0);
    refresh();                 // ensure base screen is pushed once
 }
 
