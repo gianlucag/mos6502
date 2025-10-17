@@ -21,7 +21,7 @@ class NcWin {
          box(win, 0, 0);
          wrefresh(win);
       }
-      ~NcWin() { if (win) delwin(win); }
+      virtual ~NcWin() { if (win) delwin(win); }
 
       void xyprintf(int x, int y, const char *fmt, ...) {
          if (!win) return;
@@ -101,7 +101,7 @@ public:
         wrefresh(inner);
     }
 
-    ~TerminalWin() {
+    ~TerminalWin() override {
         if (inner) { delwin(inner); inner = nullptr; }
     }
 
