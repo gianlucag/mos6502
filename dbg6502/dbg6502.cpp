@@ -93,264 +93,264 @@ class MemoryWin : public NcWin {
 
 // --- TerminalWin: scrolling printf + getline with history and TAB completion ---
 class TerminalWin : public NcWin {
-public:
-    TerminalWin(int x, int y, int w, int h) : NcWin(x, y, w, h) {
-        int H, W; getmaxyx(win, H, W);
-        inner = derwin(win, H - 2, W - 2, 1, 1);   // draw inside border
-        scrollok(inner, TRUE);
-        keypad(inner, TRUE);
-        wsetscrreg(inner, 0, (H - 2) - 1);
-        wmove(inner, 0, 0);
-        wrefresh(win);
-        wrefresh(inner);
-    }
+   public:
+      TerminalWin(int x, int y, int w, int h) : NcWin(x, y, w, h) {
+         int H, W; getmaxyx(win, H, W);
+         inner = derwin(win, H - 2, W - 2, 1, 1);   // draw inside border
+         scrollok(inner, TRUE);
+         keypad(inner, TRUE);
+         wsetscrreg(inner, 0, (H - 2) - 1);
+         wmove(inner, 0, 0);
+         wrefresh(win);
+         wrefresh(inner);
+      }
 
-    ~TerminalWin() override { if (inner) { delwin(inner); inner = nullptr; } }
+      ~TerminalWin() override { if (inner) { delwin(inner); inner = nullptr; } }
 
-    void printf(const char* fmt, ...) {
-        va_list args; va_start(args, fmt);
-        vw_printw(inner, fmt, args);
-        va_end(args);
-        waddch(inner, '\n');
-        wrefresh(inner);
-    }
+      void printf(const char* fmt, ...) {
+         va_list args; va_start(args, fmt);
+         vw_printw(inner, fmt, args);
+         va_end(args);
+         waddch(inner, '\n');
+         wrefresh(inner);
+      }
 
-    // getline: prompt + echo + backspace + 64-entry history + DOS-style TAB cycling
-    void getline(const char* prompt, char* buffer) {
-        curs_set(1);
+      // getline: prompt + echo + backspace + 64-entry history + DOS-style TAB cycling
+      void getline(const char* prompt, char* buffer) {
+         curs_set(1);
 
-        // Start new line if cursor not at column 0
-        int cy, cx; getyx(inner, cy, cx);
-        if (cx != 0) { waddch(inner, '\n'); }
+         // Start new line if cursor not at column 0
+         int cy, cx; getyx(inner, cy, cx);
+         if (cx != 0) { waddch(inner, '\n'); }
 
-        std::string current;
-        draw_line(prompt, current);
+         std::string current;
+         draw_line(prompt, current);
 
-        int hist_index = -1;
+         int hist_index = -1;
 
-        // Completion session state
-        bool comp_active = false;           // true after first TAB until any edit
-        int  comp_word_start = 0;
-        std::string comp_base;
-        std::vector<std::string> comp_matches;
-        int  comp_index = 0;
+         // Completion session state
+         bool comp_active = false;           // true after first TAB until any edit
+         int  comp_word_start = 0;
+         std::string comp_base;
+         std::vector<std::string> comp_matches;
+         int  comp_index = 0;
 
-        auto reset_completion = [&](){
+         auto reset_completion = [&](){
             comp_active = false;
             comp_matches.clear();
             comp_index = 0;
-        };
+         };
 
-        while (true) {
+         while (true) {
             int ch = wgetch(inner);
 
             // ENTER: accept input
             if (ch == '\n' || ch == '\r') {
-                waddch(inner, '\n');
-                if (!current.empty()) {
-                    if (history.empty() || history.back() != current) {
-                        history.push_back(current);
-                        if (history.size() > kMaxHistory) history.erase(history.begin());
-                    }
-                }
-                std::strcpy(buffer, current.c_str());
-                wrefresh(inner);
-                curs_set(0);
-                return;
+               waddch(inner, '\n');
+               if (!current.empty()) {
+                  if (history.empty() || history.back() != current) {
+                     history.push_back(current);
+                     if (history.size() > kMaxHistory) history.erase(history.begin());
+                  }
+               }
+               std::strcpy(buffer, current.c_str());
+               wrefresh(inner);
+               curs_set(0);
+               return;
             }
 
             // TAB: compute or cycle filename completions for last token
             if (ch == '\t') {
-                prepare_completion_state(current,
-                                         comp_active,
-                                         comp_word_start,
-                                         comp_base,
-                                         comp_matches,
-                                         comp_index);
-                if (!comp_matches.empty()) {
-                    // Replace token with the candidate at comp_index, then advance index
-                    current.replace(comp_word_start, current.size() - comp_word_start,
-                                    comp_matches[comp_index]);
-                    draw_line(prompt, current);
-                    comp_index = (comp_index + 1) % static_cast<int>(comp_matches.size());
-                } else {
-                    beep();
-                }
-                continue;
+               prepare_completion_state(current,
+                     comp_active,
+                     comp_word_start,
+                     comp_base,
+                     comp_matches,
+                     comp_index);
+               if (!comp_matches.empty()) {
+                  // Replace token with the candidate at comp_index, then advance index
+                  current.replace(comp_word_start, current.size() - comp_word_start,
+                        comp_matches[comp_index]);
+                  draw_line(prompt, current);
+                  comp_index = (comp_index + 1) % static_cast<int>(comp_matches.size());
+               } else {
+                  beep();
+               }
+               continue;
             }
 
             // History navigation
             if (ch == KEY_UP) {
-                if (!history.empty()) {
-                    if (hist_index < 0) hist_index = static_cast<int>(history.size()) - 1;
-                    else if (hist_index > 0) hist_index--;
-                    current = history[hist_index];
-                    draw_line(prompt, current);
-                }
-                reset_completion();
-                continue;
+               if (!history.empty()) {
+                  if (hist_index < 0) hist_index = static_cast<int>(history.size()) - 1;
+                  else if (hist_index > 0) hist_index--;
+                  current = history[hist_index];
+                  draw_line(prompt, current);
+               }
+               reset_completion();
+               continue;
             }
             if (ch == KEY_DOWN) {
-                if (!history.empty() && hist_index >= 0) {
-                    if (hist_index < static_cast<int>(history.size()) - 1) {
-                        hist_index++;
-                        current = history[hist_index];
-                    } else {
-                        hist_index = -1;
-                        current.clear();
-                    }
-                    draw_line(prompt, current);
-                }
-                reset_completion();
-                continue;
+               if (!history.empty() && hist_index >= 0) {
+                  if (hist_index < static_cast<int>(history.size()) - 1) {
+                     hist_index++;
+                     current = history[hist_index];
+                  } else {
+                     hist_index = -1;
+                     current.clear();
+                  }
+                  draw_line(prompt, current);
+               }
+               reset_completion();
+               continue;
             }
 
             // Backspace
             if (ch == KEY_BACKSPACE || ch == 127 || ch == 8) {
-                if (!current.empty()) {
-                    current.pop_back();
-                    draw_line(prompt, current);
-                } else {
-                    beep();
-                }
-                reset_completion();
-                continue;
+               if (!current.empty()) {
+                  current.pop_back();
+                  draw_line(prompt, current);
+               } else {
+                  beep();
+               }
+               reset_completion();
+               continue;
             }
 
             // Ignore lateral nav for now (keeps logic simple)
             if (ch == KEY_LEFT || ch == KEY_RIGHT || ch == KEY_HOME || ch == KEY_END) {
-                reset_completion();
-                continue;
+               reset_completion();
+               continue;
             }
 
             // Printable ASCII
             if (is_printable(ch)) {
-                int H, W; getmaxyx(inner, H, W);
-                int prompt_len = (int)std::strlen(prompt);
-                if (prompt_len + (int)current.size() < W - 1) {
-                    current.push_back((char)ch);
-                    draw_line(prompt, current);
-                } else {
-                    beep();
-                }
-                reset_completion();
-                continue;
+               int H, W; getmaxyx(inner, H, W);
+               int prompt_len = (int)std::strlen(prompt);
+               if (prompt_len + (int)current.size() < W - 1) {
+                  current.push_back((char)ch);
+                  draw_line(prompt, current);
+               } else {
+                  beep();
+               }
+               reset_completion();
+               continue;
             }
 
             // Unknown key: ignore, but end any completion session
             reset_completion();
-        }
-    }
+         }
+      }
 
-private:
-    WINDOW* inner{};
-    static constexpr size_t kMaxHistory = 64;
-    std::vector<std::string> history;
+   private:
+      WINDOW* inner{};
+      static constexpr size_t kMaxHistory = 64;
+      std::vector<std::string> history;
 
-    static bool is_printable(int ch) { return ch >= 32 && ch <= 126; }
+      static bool is_printable(int ch) { return ch >= 32 && ch <= 126; }
 
-    void draw_line(const char* prompt, const std::string& text) {
-        int y, x; getyx(inner, y, x);
-        wmove(inner, y, 0);
-        wclrtoeol(inner);
-        waddstr(inner, prompt);
-        waddnstr(inner, text.c_str(), (int)text.size());
-        wrefresh(inner);
-    }
+      void draw_line(const char* prompt, const std::string& text) {
+         int y, x; getyx(inner, y, x);
+         wmove(inner, y, 0);
+         wclrtoeol(inner);
+         waddstr(inner, prompt);
+         waddnstr(inner, text.c_str(), (int)text.size());
+         wrefresh(inner);
+      }
 
-    // -------- Completion core --------
+      // -------- Completion core --------
 
-    // Build candidates once per TAB session; do NOT rebuild while cycling.
-    void prepare_completion_state(const std::string& current,
-                                  bool& comp_active,
-                                  int& comp_word_start,
-                                  std::string& comp_base,
-                                  std::vector<std::string>& comp_matches,
-                                  int& comp_index)
-    {
-        if (comp_active) return; // already cycling on this input
+      // Build candidates once per TAB session; do NOT rebuild while cycling.
+      void prepare_completion_state(const std::string& current,
+            bool& comp_active,
+            int& comp_word_start,
+            std::string& comp_base,
+            std::vector<std::string>& comp_matches,
+            int& comp_index)
+      {
+         if (comp_active) return; // already cycling on this input
 
-        comp_matches.clear();
-        comp_index = 0;
+         comp_matches.clear();
+         comp_index = 0;
 
-        // Last space-delimited token
-        comp_word_start = (int)current.find_last_of(' ');
-        comp_word_start = (comp_word_start == (int)std::string::npos) ? 0 : comp_word_start + 1;
-        comp_base = current.substr(comp_word_start);
+         // Last space-delimited token
+         comp_word_start = (int)current.find_last_of(' ');
+         comp_word_start = (comp_word_start == (int)std::string::npos) ? 0 : comp_word_start + 1;
+         comp_base = current.substr(comp_word_start);
 
-        // Split into dir + base; if token ends with slash, browse that dir (base="")
-        std::string dirpath, base;
-        bool ends_with_slash = !comp_base.empty() &&
-                               (comp_base.back() == '/' || comp_base.back() == '\\');
-        split_path(comp_base, dirpath, base);
-        if (ends_with_slash) base.clear();
+         // Split into dir + base; if token ends with slash, browse that dir (base="")
+         std::string dirpath, base;
+         bool ends_with_slash = !comp_base.empty() &&
+            (comp_base.back() == '/' || comp_base.back() == '\\');
+         split_path(comp_base, dirpath, base);
+         if (ends_with_slash) base.clear();
 
-        // List matches; when browsing a directory after trailing slash, list all entries
-        comp_matches = list_matches(dirpath, base, /*browse_all=*/ends_with_slash);
+         // List matches; when browsing a directory after trailing slash, list all entries
+         comp_matches = list_matches(dirpath, base, /*browse_all=*/ends_with_slash);
 
-        // Convert to replacements relative to original token
-        for (std::string& m : comp_matches) m = join_path(dirpath, m);
-        std::sort(comp_matches.begin(), comp_matches.end());
+         // Convert to replacements relative to original token
+         for (std::string& m : comp_matches) m = join_path(dirpath, m);
+         std::sort(comp_matches.begin(), comp_matches.end());
 
-        comp_active = true; // start cycling
-    }
+         comp_active = true; // start cycling
+      }
 
-    static void split_path(const std::string& token, std::string& dir, std::string& base) {
-        auto pos = token.find_last_of("/\\");
-        if (pos == std::string::npos) {
+      static void split_path(const std::string& token, std::string& dir, std::string& base) {
+         auto pos = token.find_last_of("/\\");
+         if (pos == std::string::npos) {
             dir = ".";
             base = token;
-        } else {
+         } else {
             dir  = token.substr(0, pos + 1);
             base = token.substr(pos + 1);
             if (dir.empty()) dir = "/";
-        }
-    }
+         }
+      }
 
-    static std::string join_path(const std::string& dir, const std::string& name) {
-        if (dir == "." || dir.empty()) return name;
-        char last = dir.back();
-        if (last == '/' || last == '\\') return dir + name;
-        return dir + "/" + name;
-    }
+      static std::string join_path(const std::string& dir, const std::string& name) {
+         if (dir == "." || dir.empty()) return name;
+         char last = dir.back();
+         if (last == '/' || last == '\\') return dir + name;
+         return dir + "/" + name;
+      }
 
-    static bool is_dir(const std::string& path) {
-        struct stat st{};
-        if (stat(path.c_str(), &st) == 0) return S_ISDIR(st.st_mode);
-        return false;
-    }
+      static bool is_dir(const std::string& path) {
+         struct stat st{};
+         if (stat(path.c_str(), &st) == 0) return S_ISDIR(st.st_mode);
+         return false;
+      }
 
-    // List directory entries starting with base; if browse_all, list everything.
-    // Skip "." and ".." to avoid creeping with "../<TAB>".
-    static std::vector<std::string> list_matches(const std::string& dir,
-                                                 const std::string& base,
-                                                 bool browse_all)
-    {
-        std::vector<std::string> out;
-        DIR* d = opendir(dir.c_str());
-        if (!d) return out;
+      // List directory entries starting with base; if browse_all, list everything.
+      // Skip "." and ".." to avoid creeping with "../<TAB>".
+      static std::vector<std::string> list_matches(const std::string& dir,
+            const std::string& base,
+            bool browse_all)
+      {
+         std::vector<std::string> out;
+         DIR* d = opendir(dir.c_str());
+         if (!d) return out;
 
-        bool show_hidden = browse_all ? true : (!base.empty() && base[0] == '.');
+         bool show_hidden = browse_all ? true : (!base.empty() && base[0] == '.');
 
-        for (dirent* ent; (ent = readdir(d)); ) {
+         for (dirent* ent; (ent = readdir(d)); ) {
             std::string name = ent->d_name;
             if (name == "." || name == "..") continue;
             if (!show_hidden && !name.empty() && name[0] == '.') continue;
 
             if (browse_all || starts_with(name, base)) {
-                std::string full = (dir == ".") ? name : join_path(dir, name);
-                if (is_dir((dir == ".") ? name : full)) name += "/";
-                out.push_back(name);
+               std::string full = (dir == ".") ? name : join_path(dir, name);
+               if (is_dir((dir == ".") ? name : full)) name += "/";
+               out.push_back(name);
             }
-        }
-        closedir(d);
-        return out;
-    }
+         }
+         closedir(d);
+         return out;
+      }
 
-    static bool starts_with(const std::string& s, const std::string& prefix) {
-        if (prefix.size() > s.size()) return false;
-        return std::equal(prefix.begin(), prefix.end(), s.begin());
-    }
+      static bool starts_with(const std::string& s, const std::string& prefix) {
+         if (prefix.size() > s.size()) return false;
+         return std::equal(prefix.begin(), prefix.end(), s.begin());
+      }
 };
 
 void setup_ncurses(void) {
@@ -376,7 +376,7 @@ TerminalWin *displaywin = NULL;
 
 void bus_write(uint16_t addr, uint8_t data) {
    displaywin->printf("write %04x %02x", addr, data);
-   if (write_protect[addr / 8] & (1 << (addr & 0x7))) {
+   if (write_protect[addr >> 3] & (1 << (addr & 0x7))) {
       bus_error = true;
       displaywin->printf("BUS ERROR");
    }
@@ -425,6 +425,9 @@ void do_a(char *p) {
       p++;
       cpu->SetA(parsenum(p));
    }
+   else {
+      termwin->printf("parse error");
+   }
 }
 
 void do_x(char *p) {
@@ -432,6 +435,9 @@ void do_x(char *p) {
    if (p) {
       p++;
       cpu->SetX(parsenum(p));
+   }
+   else {
+      termwin->printf("parse error");
    }
 }
 
@@ -441,6 +447,9 @@ void do_y(char *p) {
       p++;
       cpu->SetY(parsenum(p));
    }
+   else {
+      termwin->printf("parse error");
+   }
 }
 
 void do_pc(char *p) {
@@ -448,6 +457,9 @@ void do_pc(char *p) {
    if (p) {
       p++;
       cpu->SetPC(parsenum(p));
+   }
+   else {
+      termwin->printf("parse error");
    }
 }
 
@@ -457,6 +469,9 @@ void do_sp(char *p) {
       p++;
       cpu->SetS(parsenum(p));
    }
+   else {
+      termwin->printf("parse error");
+   }
 }
 
 void do_sr(char *p) {
@@ -464,6 +479,109 @@ void do_sr(char *p) {
    if (p) {
       p++;
       cpu->SetP(parsenum(p));
+   }
+   else {
+      termwin->printf("parse error");
+   }
+}
+
+void do_wpset(char *p) {
+   int begin, end;
+   p = strchr(p, ' ');
+   if (p) {
+      p++;
+      char *q = strchr(p, '-');
+      if (q) {
+         *q = 0;
+         q++;
+         begin = parsenum(p);
+         end   = parsenum(q);
+
+         displaywin->printf("wp set %04x to %04x", begin, end);
+         while (begin <= end && (begin & 0x7)) {
+            write_protect[begin >> 3] |= (1 << (begin & 0x7));
+            begin++;
+         }
+         while (!(begin & 0x7) && (begin + 8) <= end) {
+            write_protect[begin >> 3] = 0xFF;
+            begin += 8;
+         }
+         while (begin <= end && (begin & 0x7)) {
+            write_protect[begin >> 3] |= (1 << (begin & 0x7));
+            begin++;
+         }
+      }
+      else {
+         displaywin->printf("wp set %04x", begin);
+         begin = parsenum(p);
+         write_protect[begin >> 3] |= (1 << (begin & 0x7));
+      }
+   }
+   else {
+      termwin->printf("parse error");
+   }
+}
+
+void do_wpclr(char *p) {
+   int begin, end;
+   p = strchr(p, ' ');
+   if (p) {
+      p++;
+      char *q = strchr(p, '-');
+      if (q) {
+         *q = 0;
+         q++;
+         begin = parsenum(p);
+         end   = parsenum(q);
+
+         displaywin->printf("wp clr %04x to %04x", begin, end);
+         while (begin <= end && (begin & 0x7)) {
+            write_protect[begin >> 3] &= ~(1 << (begin & 0x7));
+            begin++;
+         }
+         while (!(begin & 0x7) && (begin + 8) <= end) {
+            write_protect[begin >> 3] = 0x00;
+            begin += 8;
+         }
+         while (begin <= end && (begin & 0x7)) {
+            write_protect[begin >> 3] &= ~(1 << (begin & 0x7));
+            begin++;
+         }
+      }
+      else {
+         begin = parsenum(p);
+         displaywin->printf("wp clr %04x", begin);
+         write_protect[begin >> 3] &= ~(1 << (begin & 0x7));
+      }
+   }
+   else {
+      termwin->printf("parse error");
+   }
+}
+
+void do_breakset(char *p) {
+   p = strchr(p, ' ');
+   if (p) {
+      p++;
+      int pc = parsenum(p);
+      displaywin->printf("break set %04x", pc);
+      breakpoint[pc >> 3] |= (1 << (pc & 0x7));
+   }
+   else {
+      termwin->printf("parse error");
+   }
+}
+
+void do_breakclr(char *p) {
+   p = strchr(p, ' ');
+   if (p) {
+      p++;
+      int pc = parsenum(p);
+      displaywin->printf("break clr %04x", pc);
+      breakpoint[pc >> 3] &= ~(1 << (pc & 0x7));
+   }
+   else {
+      termwin->printf("parse error");
    }
 }
 
@@ -475,13 +593,16 @@ struct Commands {
    const char *help;
    handler exe;
 } commands[] = {
-   { "A=",    "<num>", "set the A register", do_a },
-   { "X=",    "<num>", "set the X register", do_x },
-   { "Y=",    "<num>", "set the Y register", do_y },
-   { "PC=",    "<num>", "set the PC", do_pc },
-   { "SR=",    "<num>", "set the STATUS", do_sr },
-   { "SP=",    "<num>", "set the STACK POINTER", do_sp },
-   { "reset", NULL,    "reset the cpu", do_reset },
+   { "A=",       "<num>", "set the A register", do_a },
+   { "X=",       "<num>", "set the X register", do_x },
+   { "Y=",       "<num>", "set the Y register", do_y },
+   { "PC=",      "<num>", "set the PC", do_pc },
+   { "SR=",      "<num>", "set the STATUS", do_sr },
+   { "SP=",      "<num>", "set the STACK POINTER", do_sp },
+   { "wpset",    " <num>[-<num>]", "set write protect on address or range of addresses", do_wpset },
+   { "wpclr",    " <num>[-<num>]", "clr write protect on address or range of addresses", do_wpclr },
+   { "break",    " <num>", "set a breakpoint", do_breakset },
+   { "unbreak",  " <num>", "clr a breakpoint", do_breakclr },
    { "reset", NULL,    "reset the cpu", do_reset },
    { "quit",  NULL,    "quit the program", do_quit },
    { "exit",  NULL,    "same as quit", do_quit },
