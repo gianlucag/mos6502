@@ -55,3 +55,4 @@ for <file>, tab completion should work as expected.
 
 
 disassembly and lst file input is planned, but not yet implemented.
+IRQ and NMI handling is also on the future roadmap.
