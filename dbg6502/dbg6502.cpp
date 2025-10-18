@@ -13,6 +13,8 @@
 
 #include "../mos6502.h"
 
+bool verbose = false;
+
 uint8_t ram[65536] = { 0x4C, 0, 0 } ;
 uint8_t write_protect[65536 / 8] = { 0 };
 uint8_t breakpoint[65536 / 8] = { 0 };
@@ -380,7 +382,9 @@ RegisterWin *regwin = NULL;
 TerminalWin *displaywin = NULL;
 
 void bus_write(uint16_t addr, uint8_t data) {
-   displaywin->printf("write %04x %02x", addr, data);
+   if (verbose) {
+      displaywin->printf("write %04x %02x", addr, data);
+   }
    if (write_protect[addr >> 3] & (1 << (addr & 0x7))) {
       bus_error = true;
       displaywin->printf("BUS ERROR");
@@ -391,7 +395,9 @@ void bus_write(uint16_t addr, uint8_t data) {
 }
 
 uint8_t bus_read(uint16_t addr) {
-   displaywin->printf("read %04x %02x", addr, ram[addr]);
+   if (verbose) {
+      displaywin->printf("read %04x %02x", addr, ram[addr]);
+   }
    return ram[addr];
 }
 
@@ -722,8 +728,10 @@ void do_run(char *) {
    nodelay(stdscr, TRUE);  // make getch() non-blocking
    while (!bus_error && !breakpoint_hit) {
       step();
-      regwin->update();
-      memwin->update();
+      if (verbose) {
+         regwin->update();
+         memwin->update();
+      }
 
       int ch = getch();
       if (ch != ERR && ch == ' ') {
