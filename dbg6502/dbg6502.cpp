@@ -956,8 +956,8 @@ void do_help(char *)
       displaywin->printf("%-30s  %s", buf, commands[i].help);
    }
    displaywin->printf("================");
-   displaywin->printf("numbers may be entered as $/0x (hex), %%/0b (binary),");
-   displaywin->printf("   @/0 (octal) or decimal (no prefix)");
+   displaywin->printf("numbers may be entered as $/x/0x (hex), %%/b/0b (binary),");
+   displaywin->printf("   @/o/0 (octal) or decimal (no prefix)");
    displaywin->printf("================");
 }
 
