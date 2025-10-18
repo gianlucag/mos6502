@@ -13,7 +13,7 @@
 
 #include "../mos6502.h"
 
-bool verbose = false;
+uint8_t verbosity = 0;
 
 uint8_t ram[65536] = { 0x4C, 0, 0 } ;
 uint8_t write_protect[65536 / 8] = { 0 };
@@ -80,11 +80,21 @@ class MemoryWin : public NcWin {
       void set_address(uint16_t addr) {
          int h, w; getmaxyx(win, h, w);
          address = addr;
+
+         addr &= 0xFFF0;
+         addr -= 32;
+
          for (int i = 0; i < h - 2; i++) {
-            xyprintf(1, i + 1, "%04x: ", addr + 16 * i);
+            xyprintf(1, i + 1, "%04x: ", (uint16_t)(addr + 16 * i));
             for (int j = 0; j < 16; j++) {
+               if ((uint16_t) (addr + 16 * i + j) == address) {
+                  wattron(win, A_REVERSE);
+               }
                xyprintf(1 + 7 + j * 3, i + 1, "%02x",
-                     ram[addr + 16 * i + j]);
+                     ram[(uint16_t)(addr + 16 * i + j)]);
+               if ((uint16_t) (addr + 16 * i + j) == address) {
+                  wattroff(win, A_REVERSE);
+               }
             }
          }
       }
@@ -382,8 +392,11 @@ RegisterWin *regwin = NULL;
 TerminalWin *displaywin = NULL;
 
 void bus_write(uint16_t addr, uint8_t data) {
-   if (verbose) {
+   if (verbosity >= 3) {
       displaywin->printf("write %04x %02x", addr, data);
+   }
+   if (verbosity >= 2) {
+      memwin->set_address(addr);
    }
    if (write_protect[addr >> 3] & (1 << (addr & 0x7))) {
       bus_error = true;
@@ -395,8 +408,11 @@ void bus_write(uint16_t addr, uint8_t data) {
 }
 
 uint8_t bus_read(uint16_t addr) {
-   if (verbose) {
+   if (verbosity >= 3) {
       displaywin->printf("read %04x %02x", addr, ram[addr]);
+   }
+   if (verbosity >= 2) {
+      memwin->set_address(addr);
    }
    return ram[addr];
 }
@@ -485,11 +501,53 @@ void do_sp(char *p) {
    }
 }
 
+uint8_t flagmask(char *p) {
+   static const char *match1 = "nv-bdizc";
+   static const char *match2 = "NV-BDIZC";
+   uint8_t ret = 0;
+
+   while (*p) {
+      char *q = strchr((char *)match1, *p);
+      if (q) {
+         ret |= 1 << (7 - (q - match1));
+      }
+      q = strchr((char *)match2, *p);
+      if (q) {
+         ret |= 1 << (7 - (q - match1));
+      }
+      p++;
+   }
+
+   return ret;
+}
+
+uint8_t flagval(char *p) {
+   static const char *match = "NV-BDIZC";
+   uint8_t ret = 0;
+
+   while (*p) {
+      const char *q = strchr((char *)match, *p);
+      if (q) {
+         ret |= 1 << (7 - (q - match));
+      }
+      p++;
+   }
+
+   return ret;
+}
+
 void do_sr(char *p) {
+   static const char *match = "nvbdizcNVBDIZC";
+
    p = strchr(p, '=');
    if (p) {
       p++;
-      cpu->SetP(parsenum(p));
+      if (strchr(match, *p)) {
+         cpu->SetP((cpu->GetP() & ~flagmask(p)) | flagval(p));
+      }
+      else {
+         cpu->SetP(parsenum(p));
+      }
    }
    else {
       termwin->printf("parse error");
@@ -728,8 +786,10 @@ void do_run(char *) {
    nodelay(stdscr, TRUE);  // make getch() non-blocking
    while (!bus_error && !breakpoint_hit) {
       step();
-      if (verbose) {
+      if (verbosity >= 1) {
          regwin->update();
+      }
+      if (verbosity >= 2) {
          memwin->update();
       }
 
@@ -743,6 +803,17 @@ void do_run(char *) {
 
 void do_step(char *) {
    step();
+}
+
+void do_verbose(char *p) {
+   p = strchr(p, ' ');
+   if (p) {
+      p++;
+      verbosity = parsenum(p);
+   }
+   else {
+      termwin->printf("parse error");
+   }
 }
 
 void do_help(char *);
@@ -767,6 +838,7 @@ struct Commands {
    { "run",   NULL,    "run program to breakpoint", do_run },
    { "step",   NULL,    "single step program", do_step },
    { "unbreak",  " <num>", "clr a breakpoint", do_breakclr },
+   { "verbose",  " <num>", "set verbosity (0-3)", do_verbose },
    { "wpclr",    " <num>[-<num>]", "clr write protect on address or range of addresses", do_wpclr },
    { "wpset",    " <num>[-<num>]", "set write protect on address or range of addresses", do_wpset },
 
