@@ -951,12 +951,13 @@ void do_help(char *)
 {
    displaywin->printf("=== COMMANDS ===");
    for (int i = 0; i < sizeof(commands) / sizeof(commands[0]); i++) {
-      displaywin->printf("%s%s\t%s", commands[i].cmd, commands[i].args ? commands[i].args : "",
-                         commands[i].help);
+      char buf[1024];
+      sprintf(buf, "%s%s", commands[i].cmd, commands[i].args ? commands[i].args : "");
+      displaywin->printf("%-30s  %s", buf, commands[i].help);
    }
    displaywin->printf("================");
-   displaywin->printf("numbers may be entered as $xx (hex), %%bbbbbbbb (binary),");
-   displaywin->printf("   @ooo (octal) or decimal (no prefix)");
+   displaywin->printf("numbers may be entered as $/0x (hex), %%/0b (binary),");
+   displaywin->printf("   @/0 (octal) or decimal (no prefix)");
    displaywin->printf("================");
 }
 
@@ -979,10 +980,10 @@ int main()
 
    int H, W; getmaxyx(stdscr, H, W);
 
-   termwin = new TerminalWin(0, H - 8, W, 8);
-   memwin = new MemoryWin(W - 57, H - 18 - 8, 57, 18);
-   regwin = new RegisterWin(W - 57, H - 18 - 8 - 3, 57, 3);
-   displaywin = new TerminalWin(0, 0, W-57, H - 8);
+   regwin = new RegisterWin(0, 0, 57, 3);
+   memwin = new MemoryWin(0, 3, 57, 18);
+   termwin = new TerminalWin(0, 3 + 18, 57, H - 3 - 18);
+   displaywin = new TerminalWin(58, 0, W-57, H);
 
    termwin->printf("Welcome. Type lines; use Up/Down to browse history. Enter accepts. ? for help");
    char buf[1024];
