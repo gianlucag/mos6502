@@ -22,7 +22,7 @@ $(BASE):
 	git clone https://github.com/SingleStepTests/65x02.git
 
 main: main.cpp ../mos6502.cpp ../mos6502.h
-	g++ -O3 -o main -DILLEGAL_OPCODES ../mos6502.cpp main.cpp
+	g++ -O3 -Wall -o main -DILLEGAL_OPCODES ../mos6502.cpp main.cpp
 
 tests: main
 	for f in 65x02/6502/v1/*.json; do echo == "$$f" ; ./main "$$f"; done

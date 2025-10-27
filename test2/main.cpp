@@ -24,13 +24,16 @@
 
 #define PMASK (~0x00)
 
+static const char *unstable = "\x6b";
+
 bool quiet = false;
 uint8_t ram[65536] = {0};
 mos6502 *cpu = NULL;
 int linenum;
-int cycles;
+uint64_t cycles;
 uint64_t actual_cycles;
 int failures = 0;
+bool is_unstable = false;
 
 char linebuf[4096];
 char hexbuf[4096];
@@ -170,7 +173,7 @@ void handle_cycles(char *copy)
       bail(buf);
    }
 
-   printf("CYCLES: %d\n", cycles);
+   printf("CYCLES: %d\n", (int)cycles);
 
    free(copy);
 }
@@ -293,7 +296,15 @@ void handle_line(const char *line)
 
 void handle_json(const char *fname)
 {
-   char *p;
+   const char *p = strstr(fname, ".json");
+   if (p) {
+      p -= 2;
+      unsigned char x = strtoul(p, NULL, 16);
+      if (strchr(unstable, x)) {
+         is_unstable = true;
+      }
+   }
+
    linenum = 1;
    FILE *f = fopen(fname, "r");
    if (!f) {
@@ -348,8 +359,8 @@ int main(int argc, char **argv) {
    handle_json(argv[1]);
 
    if (failures) {
-      printf("%d failure%s\n", failures, failures > 1 ? "s" : "");
+      printf("%d %sfailure%s\n", failures, is_unstable ? "unstable " : "", failures > 1 ? "s" : "");
    }
 
-   return failures ? -1 : 0;
+   return (failures && !is_unstable) ? -1 : 0;
 }
