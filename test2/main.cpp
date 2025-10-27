@@ -66,7 +66,23 @@ void translate(void)
    int n = 0;
 
    while (*p) {
-      if (*p >= '0' && *p <= '9') {
+      if (*p == ' ' && !strncmp(p+1, INITIAL, strlen(INITIAL))) {
+         *q++ = '\n';
+         p++;
+      }
+      else if (*p == ' ' && !strncmp(p+1, FINAL, strlen(FINAL))) {
+         *q++ = '\n';
+         p++;
+      }
+      else if (*p == ' ' && !strncmp(p+1, CYCLES, strlen(CYCLES))) {
+         *q++ = '\n';
+         p++;
+      }
+      else if (*p == ' ' && !strncmp(p+1, RAM, strlen(RAM))) {
+         *q++ = '\n';
+         p++;
+      }
+      else if (*p >= '0' && *p <= '9') {
          n = n * 10 + (*p - '0');
          valid = true;
          p++;
@@ -107,7 +123,7 @@ const char *locate(const char *haystack, const char *needle, const char *name)
    }
    else {
       char buf[1024];
-      sprintf(buf, "cannot find %s at %d", name, linenum);
+      sprintf(buf, "cannot find %s at line %d", name, linenum);
       bail(buf);
    }
    return NULL;
@@ -123,7 +139,7 @@ void handle_name(char *copy)
    }
    else {
       char buf[1024];
-      sprintf(buf, "cannot parse NAME at %d", linenum);
+      sprintf(buf, "cannot parse NAME at line %d", linenum);
       bail(buf);
    }
    free(copy);
@@ -143,7 +159,7 @@ void handle_cycles(char *copy)
 
    if (cycles < 2) {
       char buf[1024];
-      sprintf(buf, "cannot parse CYCLES at %d", linenum);
+      sprintf(buf, "cannot parse CYCLES at line %d", linenum);
       bail(buf);
    }
 
@@ -199,27 +215,27 @@ void handle_final(char *copy, bool jammed)
    uint16_t pcval;
 
    if (!jammed && cpu->GetPC() != (pcval = /* ASSIGN */ atoi(locate(p, PC, "FINAL_PC")))) {
-      sprintf(buf, "FAIL: PC %04x != %04x at %d", cpu->GetPC(), pcval, linenum);
+      sprintf(buf, "FAIL: PC %04x != %04x at line %d", cpu->GetPC(), pcval, linenum);
       bail(buf);
    }
    if (cpu->GetS() != (val = /* ASSIGN */ atoi(locate(p, S, "FINAL_S")))) {
-      sprintf(buf, "FAIL: S %02x != %02x at %d", cpu->GetS(), val, linenum);
+      sprintf(buf, "FAIL: S %02x != %02x at line %d", cpu->GetS(), val, linenum);
       bail(buf);
    }
    if (cpu->GetA() != (val = /* ASSIGN */ atoi(locate(p, A, "FINAL_A")))) {
-      sprintf(buf, "FAIL: A %02x != %02x at %d", cpu->GetA(), val, linenum);
+      sprintf(buf, "FAIL: A %02x != %02x at line %d", cpu->GetA(), val, linenum);
       bail(buf);
    }
    if (cpu->GetX() != (val = /* ASSIGN */ atoi(locate(p, X, "FINAL_X")))) {
-      sprintf(buf, "FAIL: X %02x != %02x at %d", cpu->GetX(), val, linenum);
+      sprintf(buf, "FAIL: X %02x != %02x at line %d", cpu->GetX(), val, linenum);
       bail(buf);
    }
    if (cpu->GetY() != (val = /* ASSIGN */ atoi(locate(p, Y, "FINAL_Y")))) {
-      sprintf(buf, "FAIL: Y %02x != %02x at %d", cpu->GetY(), val, linenum);
+      sprintf(buf, "FAIL: Y %02x != %02x at line %d", cpu->GetY(), val, linenum);
       bail(buf);
    }
    if ((cpu->GetP() & PMASK) != (val = /* ASSIGN */ (atoi(locate(p, P, "FINAL_P")) & PMASK))) {
-      sprintf(buf, "FAIL: P %02x != %02x at %d", cpu->GetP(), val, linenum);
+      sprintf(buf, "FAIL: P %02x != %02x at line %d", cpu->GetP(), val, linenum);
       bail(buf);
    }
 
@@ -230,7 +246,7 @@ void handle_final(char *copy, bool jammed)
       if (*q == '[') {
          sscanf(q+1, "%d, %d", &addr, &val);
          if (ram[addr] != val) {
-            sprintf(buf, "FAIL: RAM[%04x] %02x != %02x at %d", addr, ram[addr], val, linenum);
+            sprintf(buf, "FAIL: RAM[%04x] %02x != %02x at line %d", addr, ram[addr], val, linenum);
             bail(buf);
          }
       }
