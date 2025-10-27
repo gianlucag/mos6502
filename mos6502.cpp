@@ -1655,6 +1655,9 @@ void mos6502::Run(
       Exec(instr);
 
       cycleCount += instr.cycles;
+      if (branched) {
+         cycleCount++;
+      }
       if (instr.penalty && crossed) {
          cycleCount++;
       }
@@ -1697,6 +1700,7 @@ void mos6502::RunEternally()
 void mos6502::Exec(Instr i)
 {
    crossed = false;
+   branched = false;
    uint16_t src = (this->*i.addr)();
    (this->*i.code)(src);
 }
@@ -1886,6 +1890,7 @@ void mos6502::Op_BCC(uint16_t src)
    if (!IF_CARRY())
    {
       pc = src;
+      branched = true; // indicate we did branch
    }
    else {
       crossed = false; // branch not taken does not suffer penalty
@@ -1898,6 +1903,7 @@ void mos6502::Op_BCS(uint16_t src)
    if (IF_CARRY())
    {
       pc = src;
+      branched = true; // indicate we did branch
    }
    else {
       crossed = false; // branch not taken does not suffer penalty
@@ -1910,6 +1916,7 @@ void mos6502::Op_BEQ(uint16_t src)
    if (IF_ZERO())
    {
       pc = src;
+      branched = true; // indicate we did branch
    }
    else {
       crossed = false; // branch not taken does not suffer penalty
@@ -1932,6 +1939,7 @@ void mos6502::Op_BMI(uint16_t src)
    if (IF_NEGATIVE())
    {
       pc = src;
+      branched = true; // indicate we did branch
    }
    else {
       crossed = false; // branch not taken does not suffer penalty
@@ -1944,6 +1952,7 @@ void mos6502::Op_BNE(uint16_t src)
    if (!IF_ZERO())
    {
       pc = src;
+      branched = true; // indicate we did branch
    }
    else {
       crossed = false; // branch not taken does not suffer penalty
@@ -1956,6 +1965,7 @@ void mos6502::Op_BPL(uint16_t src)
    if (!IF_NEGATIVE())
    {
       pc = src;
+      branched = true; // indicate we did branch
    }
    else {
       crossed = false; // branch not taken does not suffer penalty
@@ -1979,6 +1989,7 @@ void mos6502::Op_BVC(uint16_t src)
    if (!IF_OVERFLOW())
    {
       pc = src;
+      branched = true; // indicate we did branch
    }
    else {
       crossed = false; // branch not taken does not suffer penalty
@@ -1991,6 +2002,7 @@ void mos6502::Op_BVS(uint16_t src)
    if (IF_OVERFLOW())
    {
       pc = src;
+      branched = true; // indicate we did branch
    }
    else {
       crossed = false; // branch not taken does not suffer penalty
