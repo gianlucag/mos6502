@@ -91,7 +91,7 @@ void bail(const char *s)
 uint32_t fetch(const char *s, uint16_t offset, uint8_t count)
 {
    uint32_t ret = 0;
-   uint32_t val;
+   uint32_t val = 0;
    for (int i = 0; i < count; i++) {
       ret <<= 4;
       if (s[offset + i] <= '9') {
