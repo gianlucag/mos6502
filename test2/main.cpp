@@ -208,7 +208,7 @@ void handle_line(const char *line)
 
       if (cycles != actual_cycles) {
          char buf[1024];
-         sprintf(buf, "FAIL: actual %d != cycles at %d", (int) actual_cycles, (int) cycles, linenum);
+         sprintf(buf, "FAIL: actual %d != %d cycles at %d", (int) actual_cycles, (int) cycles, linenum);
          bail(buf);
       }
    }
