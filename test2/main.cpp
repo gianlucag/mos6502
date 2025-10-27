@@ -30,6 +30,7 @@ mos6502 *cpu = NULL;
 int linenum;
 int cycles;
 uint64_t actual_cycles;
+int failures = 0;
 
 char linebuf[4096];
 char hexbuf[4096];
@@ -107,9 +108,15 @@ void translate(void)
    *q = 0;
 }
 
-void bail(const char *s)
+void fail(const char *s)
 {
    fprintf(stderr, "%s\n", hexbuf);
+   fprintf(stderr, "%s\n", s);
+   failures++;
+}
+
+void bail(const char *s)
+{
    fprintf(stderr, "%s\n", s);
    exit(-1);
 }
@@ -216,27 +223,27 @@ void handle_final(char *copy, bool jammed)
 
    if (!jammed && cpu->GetPC() != (pcval = /* ASSIGN */ atoi(locate(p, PC, "FINAL_PC")))) {
       sprintf(buf, "FAIL: PC %04x != %04x at line %d", cpu->GetPC(), pcval, linenum);
-      bail(buf);
+      fail(buf);
    }
    if (cpu->GetS() != (val = /* ASSIGN */ atoi(locate(p, S, "FINAL_S")))) {
       sprintf(buf, "FAIL: S %02x != %02x at line %d", cpu->GetS(), val, linenum);
-      bail(buf);
+      fail(buf);
    }
    if (cpu->GetA() != (val = /* ASSIGN */ atoi(locate(p, A, "FINAL_A")))) {
       sprintf(buf, "FAIL: A %02x != %02x at line %d", cpu->GetA(), val, linenum);
-      bail(buf);
+      fail(buf);
    }
    if (cpu->GetX() != (val = /* ASSIGN */ atoi(locate(p, X, "FINAL_X")))) {
       sprintf(buf, "FAIL: X %02x != %02x at line %d", cpu->GetX(), val, linenum);
-      bail(buf);
+      fail(buf);
    }
    if (cpu->GetY() != (val = /* ASSIGN */ atoi(locate(p, Y, "FINAL_Y")))) {
       sprintf(buf, "FAIL: Y %02x != %02x at line %d", cpu->GetY(), val, linenum);
-      bail(buf);
+      fail(buf);
    }
    if ((cpu->GetP() & PMASK) != (val = /* ASSIGN */ (atoi(locate(p, P, "FINAL_P")) & PMASK))) {
       sprintf(buf, "FAIL: P %02x != %02x at line %d", cpu->GetP(), val, linenum);
-      bail(buf);
+      fail(buf);
    }
 
    const char *q = locate(p, RAM, "FINAL_RAM");
@@ -247,7 +254,7 @@ void handle_final(char *copy, bool jammed)
          sscanf(q+1, "%d, %d", &addr, &val);
          if (ram[addr] != val) {
             sprintf(buf, "FAIL: RAM[%04x] %02x != %02x at line %d", addr, ram[addr], val, linenum);
-            bail(buf);
+            fail(buf);
          }
       }
       q++;
@@ -274,7 +281,7 @@ void handle_line(const char *line)
       if (cycles != actual_cycles) {
          char buf[1024];
          sprintf(buf, "FAIL: actual %d != %d cycles at %d", (int) actual_cycles, (int) cycles, linenum);
-         bail(buf);
+         fail(buf);
       }
    }
    else {
@@ -340,5 +347,9 @@ int main(int argc, char **argv) {
 
    handle_json(argv[1]);
 
-   return 0;
+   if (failures) {
+      printf("%d failure%s\n", failures, failures > 1 ? "s" : "");
+   }
+
+   return failures ? -1 : 0;
 }
