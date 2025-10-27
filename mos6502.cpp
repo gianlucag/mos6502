@@ -1928,8 +1928,7 @@ void mos6502::Op_BIT(uint16_t src)
 {
    uint8_t m = Read(src);
    uint8_t res = m & A;
-   SET_NEGATIVE(res & 0x80);
-   status = (status & 0x3F) | (uint8_t)(m & 0xC0) | CONSTANT | BREAK;
+   status = (status & 0x3F) | (uint8_t)(m & 0xC0);
    SET_ZERO(!res);
    return;
 }
@@ -2220,8 +2219,7 @@ void mos6502::Op_PLA(uint16_t src)
 
 void mos6502::Op_PLP(uint16_t src)
 {
-   status = StackPop() | CONSTANT | BREAK;
-   //SET_CONSTANT(1);
+   status = (status & (CONSTANT | BREAK)) | (StackPop() & ~(CONSTANT | BREAK));
    return;
 }
 
