@@ -1,0 +1,5 @@
+*.hex
+*.lst
+*.a65
+main
+6502_65C02_functional_tests
