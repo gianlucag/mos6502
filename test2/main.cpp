@@ -22,12 +22,17 @@
 #define P  "\"p\": "
 #define RAM  "\"ram\": ["
 
+#define PMASK (~0x00)
+
 bool quiet = false;
 uint8_t ram[65536] = {0};
 mos6502 *cpu = NULL;
 int linenum;
 int cycles;
 uint64_t actual_cycles;
+
+char linebuf[4096];
+char hexbuf[4096];
 
 void writeRam(uint16_t addr, uint8_t val)
 {
@@ -43,8 +48,52 @@ void tick(mos6502*)
 {
 }
 
+void translate(void)
+{
+   char *p = linebuf;
+   char *q = hexbuf;
+
+   if (!strchr(p, 'n')) {
+      strcpy(q, p);
+      return;
+   }
+
+   while (*p != ',') {
+      *q++ = *p++;
+   }
+
+   bool valid = false;
+   int n = 0;
+
+   while (*p) {
+      if (*p >= '0' && *p <= '9') {
+         n = n * 10 + (*p - '0');
+         valid = true;
+         p++;
+      }
+      else {
+         if (valid) {
+            if (n < 256) {
+               sprintf(q, "%02x", n);
+               q += 2;
+            }
+            else {
+               sprintf(q, "%04x", n);
+               q += 4;
+            }
+
+            n = 0;
+            valid = false;
+         }
+         *q++ = *p++;
+      }
+   }
+   *q = 0;
+}
+
 void bail(const char *s)
 {
+   fprintf(stderr, "%s\n", hexbuf);
    fprintf(stderr, "%s\n", s);
    exit(-1);
 }
@@ -169,7 +218,7 @@ void handle_final(char *copy, bool jammed)
       sprintf(buf, "FAIL: Y %02x != %02x at %d", cpu->GetY(), val, linenum);
       bail(buf);
    }
-   if (cpu->GetP() != (val = /* ASSIGN */ atoi(locate(p, P, "FINAL_P")))) {
+   if ((cpu->GetP() & PMASK) != (val = /* ASSIGN */ (atoi(locate(p, P, "FINAL_P")) & PMASK))) {
       sprintf(buf, "FAIL: P %02x != %02x at %d", cpu->GetP(), val, linenum);
       bail(buf);
    }
@@ -221,17 +270,18 @@ void handle_line(const char *line)
 
 void handle_json(const char *fname)
 {
-   char buf[4096];
    char *p;
    linenum = 1;
    FILE *f = fopen(fname, "r");
    if (!f) {
       bail("could not open json file");
    }
-   while (NULL != fgets(buf, sizeof(buf), f)) {
+   while (NULL != fgets(linebuf, sizeof(linebuf), f)) {
+      translate();
+
       // we assume a lot here...
 
-      p = buf;
+      p = linebuf;
       if (p[0] == '[') {
          p++;
       }
@@ -247,8 +297,11 @@ void handle_json(const char *fname)
             handle_line(p);
             break;
          default:
-            sprintf(buf, "parse error at line %d, %02x", linenum, p[0]);
-            bail(buf);
+            {
+               char buf[1024];
+               sprintf(buf, "parse error at line %d, %02x", linenum, p[0]);
+               bail(buf);
+            }
             break;
       }
       linenum++;
