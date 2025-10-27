@@ -2279,14 +2279,14 @@ void mos6502::Op_RTI(uint16_t src)
 {
    uint8_t lo, hi;
 
-   status = StackPop() | CONSTANT | BREAK;
+   status = (status & (CONSTANT | BREAK)) | (StackPop() & ~(CONSTANT | BREAK));
 
    lo = StackPop();
    hi = StackPop();
 
    pc = (hi << 8) | lo;
 
-   nmi_inhibit = false; // always, more efficient that if()
+   nmi_inhibit = false; // always, more efficient than if()
 
    return;
 }
