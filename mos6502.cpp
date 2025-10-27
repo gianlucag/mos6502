@@ -2591,11 +2591,14 @@ void mos6502::Op_RRA(uint16_t src)
    m &= 0xFF;
    Write(src, m);
 
-   unsigned int tmp = m + A + (oldC ? 1 : 0);
+   // TODO FIX, the rest of this is just Op_ADC
+   // combnine common code into a helper function
+   unsigned int tmp = m + A + (IF_CARRY() ? 1 : 0);
 
-   // N and V computed *BEFORE* adjustment
-   SET_NEGATIVE(tmp & 0x80);
+   // N V Z computed *BEFORE* adjustment
    SET_OVERFLOW(!((A ^ m) & 0x80) && ((A ^ tmp) & 0x80));
+   SET_NEGATIVE(tmp & 0x80);
+   SET_ZERO(!(tmp & 0xFF));
 
    if (IF_DECIMAL())
    {
@@ -2605,13 +2608,16 @@ void mos6502::Op_RRA(uint16_t src)
          AL = ((AL + 6) & 0xF) + 0x10;
       }
       tmp = (m & 0xF0) + (A & 0xF0) + AL;
+
+      // N V recomputed
+      SET_OVERFLOW(!((A ^ m) & 0x80) && ((A ^ tmp) & 0x80));
+      SET_NEGATIVE(tmp & 0x80);
+
       if (tmp >= 0xA0) tmp += 0x60;
    }
 
-   // Z and C computed *AFTER* adjustment
-   SET_ZERO(!(tmp & 0xFF));
+   // C computed *AFTER* adjustment
    SET_CARRY(tmp > 0xFF);
-
    A = tmp & 0xFF;
    return;
 }
