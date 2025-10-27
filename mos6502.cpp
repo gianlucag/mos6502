@@ -2311,9 +2311,10 @@ void mos6502::Op_SBC(uint16_t src)
    uint8_t m   = Read(src);
    int tmp     = A - m - (IF_CARRY() ? 0 : 1);
 
-   // N and V computed *BEFORE* adjustment (binary semantics)
-   SET_NEGATIVE(tmp & 0x80 );
+   // N V Z computed *BEFORE* adjustment (binary semantics)
    SET_OVERFLOW(((A ^ m) & (A ^ tmp) & 0x80) != 0);
+   SET_NEGATIVE(tmp & 0x80 );
+   SET_ZERO(!(tmp & 0xFF));
 
    if (IF_DECIMAL())
    {
@@ -2323,11 +2324,15 @@ void mos6502::Op_SBC(uint16_t src)
          AL = ((AL - 6) & 0x0F) - 0x10;
       }
       tmp = (A & 0xF0) - (m & 0xF0) + AL;
-      if (tmp < 0) tmp -= 0x60;
+
+      // N V recompute
+      SET_OVERFLOW(((A ^ m) & (A ^ tmp) & 0x80) != 0);
+      SET_NEGATIVE(tmp & 0x80 );
+
+      if (tmp < 0) tmp -= 0x60; // ???? huh ????
    }
 
-   // Z and C computed *AFTER* adjustment
-   SET_ZERO(!(tmp & 0xFF));
+   // C computed *AFTER* adjustment
    SET_CARRY( tmp >= 0 );
 
    A = tmp & 0xFF;
@@ -2517,9 +2522,10 @@ void mos6502::Op_ISC(uint16_t src)
    // from here on is Op_SBC
    int tmp     = A - m - (IF_CARRY() ? 0 : 1);
 
-   // N and V computed *BEFORE* adjustment (binary semantics)
-   SET_NEGATIVE(tmp & 0x80 );
+   // N V Z computed *BEFORE* adjustment (binary semantics)
    SET_OVERFLOW(((A ^ m) & (A ^ tmp) & 0x80) != 0);
+   SET_NEGATIVE(tmp & 0x80 );
+   SET_ZERO(!(tmp & 0xFF));
 
    if (IF_DECIMAL())
    {
@@ -2529,11 +2535,15 @@ void mos6502::Op_ISC(uint16_t src)
          AL = ((AL - 6) & 0x0F) - 0x10;
       }
       tmp = (A & 0xF0) - (m & 0xF0) + AL;
-      if (tmp < 0) tmp -= 0x60;
+
+      // N V recompute
+      SET_OVERFLOW(((A ^ m) & (A ^ tmp) & 0x80) != 0);
+      SET_NEGATIVE(tmp & 0x80 );
+
+      if (tmp < 0) tmp -= 0x60; // ???? huh ????
    }
 
-   // Z and C computed *AFTER* adjustment
-   SET_ZERO(!(tmp & 0xFF));
+   // C computed *AFTER* adjustment
    SET_CARRY( tmp >= 0 );
 
    A = tmp & 0xFF;
