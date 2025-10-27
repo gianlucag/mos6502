@@ -98,7 +98,7 @@ void handle_cycles(char *copy)
       bail(buf);
    }
 
-   //printf("CYCLES: %d\n", cycles);
+   printf("CYCLES: %d\n", cycles);
 
    free(copy);
 }
@@ -129,14 +129,27 @@ void handle_initial(char *copy)
    free(copy);
 }
 
-void handle_final(char *copy)
+bool is_jam(uint8_t val) {
+   // Instruction codes: 02, 12, 22, 32, 42, 52, 62, 72, 92, B2, D2, F2
+   if ((val & 0x0F) == 0x02) {
+      if ((val & 0x80) == 0) {
+         return true;
+      }
+      if ((val & 0x10) == 0x10) {
+         return true;
+      }
+   }
+   return false;
+}
+
+void handle_final(char *copy, bool jammed)
 {
    char buf[1024];
    char *p = (char *) locate(copy, FINAL, "FINAL");
    uint8_t val;
    uint16_t pcval;
 
-   if (cpu->GetPC() != (pcval = /* ASSIGN */ atoi(locate(p, PC, "FINAL_PC")))) {
+   if (!jammed && cpu->GetPC() != (pcval = /* ASSIGN */ atoi(locate(p, PC, "FINAL_PC")))) {
       sprintf(buf, "FAIL: PC %04x != %04x at %d", cpu->GetPC(), pcval, linenum);
       bail(buf);
    }
@@ -187,20 +200,29 @@ void handle_line(const char *line)
    handle_initial(strdup(line));
 
    actual_cycles = 0;
-   cpu->Run(1, actual_cycles, mos6502::INST_COUNT);
 
-   if (cycles != actual_cycles) {
-      char buf[1024];
-      sprintf(buf, "FAIL: actual %d != cycles at %d", (int) actual_cycles, (int) cycles, linenum);
-      bail(buf);
+   bool jammed = false;
+
+   if (!is_jam(ram[cpu->GetPC()])) {
+      cpu->Run(1, actual_cycles, mos6502::INST_COUNT);
+
+      if (cycles != actual_cycles) {
+         char buf[1024];
+         sprintf(buf, "FAIL: actual %d != cycles at %d", (int) actual_cycles, (int) cycles, linenum);
+         bail(buf);
+      }
+   }
+   else {
+      jammed = true;
    }
    
-   handle_final(strdup(line));
+   handle_final(strdup(line), jammed);
 }
 
 void handle_json(const char *fname)
 {
    char buf[4096];
+   char *p;
    linenum = 1;
    FILE *f = fopen(fname, "r");
    if (!f) {
@@ -208,15 +230,24 @@ void handle_json(const char *fname)
    }
    while (NULL != fgets(buf, sizeof(buf), f)) {
       // we assume a lot here...
-      switch(buf[0]) {
+
+      p = buf;
+      if (p[0] == '[') {
+         p++;
+      }
+
+      switch(p[0]) {
+         case 0:
+         case 0x0A:
+         case 0x0D:
          case '[':
          case ']':
             break;
          case '{':
-            handle_line(buf);
+            handle_line(p);
             break;
          default:
-            sprintf(buf, "parse error at line %d", linenum);
+            sprintf(buf, "parse error at line %d, %02x", linenum, p[0]);
             bail(buf);
             break;
       }
