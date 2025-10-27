@@ -2466,11 +2466,12 @@ void mos6502::Op_ARR(uint16_t src)
    bool carry = IF_CARRY();
    uint8_t m = Read(src);
    uint8_t res = m & A;
-   SET_CARRY(res & 1);
    res >>= 1;
    if (carry) {
       res |= 0x80;
    }
+   SET_CARRY((res >> 6) & 1);
+   SET_OVERFLOW(((res >> 6) ^ (res >> 5)) & 1);
    SET_NEGATIVE(res & 0x80);
    SET_ZERO(!res);
 
@@ -2479,9 +2480,14 @@ void mos6502::Op_ARR(uint16_t src)
       // ARR in decimal mode routes signals through the ALU’s decimal
       // adder path, but with no valid carry-in, so the outputs are
       // garbage. It’s not emulatable in a meaningful way.
-   }
 
-   SET_OVERFLOW(((A ^ res) & 0x40) != 0);
+      if ((res & 0xF) >= 0xA) {
+         res += 6;
+      }
+      if (res >= 0xA0) {
+         res += 0x60;
+      }
+   }
 
    A = res;
    return;
@@ -2581,10 +2587,8 @@ void mos6502::Op_RLA(uint16_t src)
 void mos6502::Op_RRA(uint16_t src)
 {
    uint16_t m = Read(src);
-   bool oldC = false;
    if (IF_CARRY()) {
       m |= 0x100;
-      oldC = true;
    }
    SET_CARRY(m & 0x01);
    m >>= 1;
@@ -2592,7 +2596,7 @@ void mos6502::Op_RRA(uint16_t src)
    Write(src, m);
 
    // TODO FIX, the rest of this is just Op_ADC
-   // combnine common code into a helper function
+   // combine common code into a helper function
    unsigned int tmp = m + A + (IF_CARRY() ? 1 : 0);
 
    // N V Z computed *BEFORE* adjustment
