@@ -2140,6 +2140,12 @@ void mos6502::Op_JSR(uint16_t src)
    pc--;
    StackPush((pc >> 8) & 0xFF);
    StackPush(pc & 0xFF);
+
+   // this fixes an obscure problem that only happens when
+   // the operand and the processor stack are at the same
+   // place...
+   src = (src & 0xFF) | (Read(pc) << 8);
+
    pc = src;
 }
 
