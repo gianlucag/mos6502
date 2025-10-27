@@ -24,7 +24,7 @@
 
 #define PMASK (~0x00)
 
-static const char *unstable = "\x6b";
+static const char *unstable = "\x6b\x93\x9b\x9c\x9e\x9f";
 
 bool quiet = false;
 uint8_t ram[65536] = {0};
