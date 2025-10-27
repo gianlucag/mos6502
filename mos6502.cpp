@@ -9,23 +9,23 @@
 #define ZERO      0x02
 #define CARRY     0x01
 
-#define SET_NEGATIVE(x) (x ? (status |= NEGATIVE) : (status &= (~NEGATIVE)) )
-#define SET_OVERFLOW(x) (x ? (status |= OVERFLOW) : (status &= (~OVERFLOW)) )
-//#define SET_CONSTANT(x) (x ? (status |= CONSTANT) : (status &= (~CONSTANT)) )
-//#define SET_BREAK(x) (x ? (status |= BREAK) : (status &= (~BREAK)) )
-#define SET_DECIMAL(x) (x ? (status |= DECIMAL) : (status &= (~DECIMAL)) )
-#define SET_INTERRUPT(x) (x ? (status |= INTERRUPT) : (status &= (~INTERRUPT)) )
-#define SET_ZERO(x) (x ? (status |= ZERO) : (status &= (~ZERO)) )
-#define SET_CARRY(x) (x ? (status |= CARRY) : (status &= (~CARRY)) )
+#define SET_NEGATIVE(x)  ((x) ? (status |= NEGATIVE)  : (status &= (~NEGATIVE)) )
+#define SET_OVERFLOW(x)  ((x) ? (status |= OVERFLOW)  : (status &= (~OVERFLOW)) )
+#define SET_CONSTANT(x)  ((x) ? (status |= CONSTANT)  : (status &= (~CONSTANT)) )
+#define SET_BREAK(x)     ((x) ? (status |= BREAK)     : (status &= (~BREAK)) )
+#define SET_DECIMAL(x)   ((x) ? (status |= DECIMAL)   : (status &= (~DECIMAL)) )
+#define SET_INTERRUPT(x) ((x) ? (status |= INTERRUPT) : (status &= (~INTERRUPT)) )
+#define SET_ZERO(x)      ((x) ? (status |= ZERO)      : (status &= (~ZERO)) )
+#define SET_CARRY(x)     ((x) ? (status |= CARRY)     : (status &= (~CARRY)) )
 
-#define IF_NEGATIVE() ((status & NEGATIVE) ? true : false)
-#define IF_OVERFLOW() ((status & OVERFLOW) ? true : false)
-#define IF_CONSTANT() ((status & CONSTANT) ? true : false)
-#define IF_BREAK() ((status & BREAK) ? true : false)
-#define IF_DECIMAL() ((status & DECIMAL) ? true : false)
+#define IF_NEGATIVE()  ((status & NEGATIVE) ? true : false)
+#define IF_OVERFLOW()  ((status & OVERFLOW) ? true : false)
+#define IF_CONSTANT()  ((status & CONSTANT) ? true : false)
+#define IF_BREAK()     ((status & BREAK) ? true : false)
+#define IF_DECIMAL()   ((status & DECIMAL) ? true : false)
 #define IF_INTERRUPT() ((status & INTERRUPT) ? true : false)
-#define IF_ZERO() ((status & ZERO) ? true : false)
-#define IF_CARRY() ((status & CARRY) ? true : false)
+#define IF_ZERO()      ((status & ZERO) ? true : false)
+#define IF_CARRY()     ((status & CARRY) ? true : false)
 
 mos6502::Instr mos6502::InstrTable[256];
 
@@ -1825,9 +1825,10 @@ void mos6502::Op_ADC(uint16_t src)
    uint8_t m = Read(src);
    unsigned int tmp = m + A + (IF_CARRY() ? 1 : 0);
 
-   // N and V computed *BEFORE* adjustment
-   SET_NEGATIVE(tmp & 0x80);
+   // N V Z computed *BEFORE* adjustment
    SET_OVERFLOW(!((A ^ m) & 0x80) && ((A ^ tmp) & 0x80));
+   SET_NEGATIVE(tmp & 0x80);
+   SET_ZERO(!(tmp & 0xFF));
 
    if (IF_DECIMAL())
    {
@@ -1837,13 +1838,16 @@ void mos6502::Op_ADC(uint16_t src)
          AL = ((AL + 6) & 0xF) + 0x10;
       }
       tmp = (m & 0xF0) + (A & 0xF0) + AL;
+
+      // N V recomputed
+      SET_OVERFLOW(!((A ^ m) & 0x80) && ((A ^ tmp) & 0x80));
+      SET_NEGATIVE(tmp & 0x80);
+
       if (tmp >= 0xA0) tmp += 0x60;
    }
 
-   // Z and C computed *AFTER* adjustment
-   SET_ZERO(!(tmp & 0xFF));
+   // C computed *AFTER* adjustment
    SET_CARRY(tmp > 0xFF);
-
    A = tmp & 0xFF;
    return;
 }
