@@ -34,6 +34,7 @@ uint64_t cycles;
 uint64_t actual_cycles;
 int failures = 0;
 bool is_unstable = false;
+const char *name = NULL;
 
 char linebuf[4096];
 char hexbuf[4096];
@@ -111,9 +112,19 @@ void translate(void)
    *q = 0;
 }
 
+bool failed = false;
+
+void reset_fail(void) {
+   failed = false;
+}
+
 void fail(const char *s)
 {
-   fprintf(stderr, "%s\n", hexbuf);
+   if (!failed) {
+      failed = true;
+      fprintf(stderr, "NAME: %s\n", name);
+      fprintf(stderr, "%s\n", hexbuf);
+   }
    fprintf(stderr, "%s\n", s);
    failures++;
 }
@@ -145,7 +156,11 @@ void handle_name(char *copy)
    char *q = strchr(p, '\"');
    if (q) {
       *q = 0;
-      printf("NAME: %s\n", p);
+      //printf("NAME: %s\n", p);
+      if (name) {
+         free((void *)name);
+      }
+      name = strdup(p);
    }
    else {
       char buf[1024];
@@ -173,7 +188,7 @@ void handle_cycles(char *copy)
       bail(buf);
    }
 
-   printf("CYCLES: %d\n", (int)cycles);
+   // printf("CYCLES: %d\n", (int)cycles);
 
    free(copy);
 }
@@ -224,6 +239,8 @@ void handle_final(char *copy, bool jammed)
    uint8_t val;
    uint16_t pcval;
 
+   reset_fail();
+
    if (!jammed && cpu->GetPC() != (pcval = /* ASSIGN */ atoi(locate(p, PC, "FINAL_PC")))) {
       sprintf(buf, "FAIL: PC %04x != %04x at line %d", cpu->GetPC(), pcval, linenum);
       fail(buf);
@@ -265,7 +282,7 @@ void handle_final(char *copy, bool jammed)
 
    free(copy);
 
-   printf("pass\n");
+   //printf("pass\n");
 }
 
 void handle_line(const char *line)
