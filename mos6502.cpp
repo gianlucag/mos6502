@@ -608,14 +608,39 @@ uint8_t mos6502::GetY()
    return Y;
 }
 
+void mos6502::SetPC(uint16_t n)
+{
+   pc = n;
+}
+
+void mos6502::SetS (uint8_t n)
+{
+   sp = n;
+}
+
+void mos6502::SetP (uint8_t n)
+{
+   status = n;
+}
+
+void mos6502::SetA (uint8_t n)
+{
+   A = n;
+}
+
+void mos6502::SetX (uint8_t n)
+{
+   X = n;
+}
+
+void mos6502::SetY (uint8_t n)
+{
+   Y = n;
+}
+
 void mos6502::SetResetS(uint8_t value)
 {
    reset_sp = value;
-}
-
-void mos6502::SetResetP(uint8_t value)
-{
-   reset_status = value | CONSTANT | BREAK;
 }
 
 void mos6502::SetResetA(uint8_t value)
@@ -631,6 +656,11 @@ void mos6502::SetResetX(uint8_t value)
 void mos6502::SetResetY(uint8_t value)
 {
    reset_Y = value;
+}
+
+void mos6502::SetResetP(uint8_t value)
+{
+   reset_status = value | CONSTANT | BREAK;
 }
 
 uint8_t mos6502::GetResetS()
@@ -662,7 +692,6 @@ void mos6502::Op_ILLEGAL(uint16_t src)
 {
    illegalOpcode = true;
 }
-
 
 void mos6502::Op_ADC(uint16_t src)
 {
