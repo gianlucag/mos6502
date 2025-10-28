@@ -17,7 +17,11 @@ BASE := 6502_65C02_functional_tests
 all: $(BASE) $(BASE)/as65_142 main tests tests
    @echo TEST COMPLETE: success
 
+clean:
+	rm -rf $(BASE) ft.* dt.* it.*
+
 $(BASE):
+	@test ! -e "$@" || { echo "do NOT use 'make -B', use 'make clean ; make' instead"; exit 1; }
 	@echo "Fetching functional tests from GitHub..."
 	git clone https://github.com/Klaus2m5/6502_65C02_functional_tests
 
