@@ -146,6 +146,28 @@ class mos6502
       void Op_TXS(uint16_t src);
       void Op_TYA(uint16_t src);
 
+#ifdef ILLEGAL_OPCODES
+      void Op_ALR(uint16_t src);
+      void Op_ANC(uint16_t src);
+      void Op_ANE(uint16_t src);
+      void Op_ARR(uint16_t src);
+      void Op_DCP(uint16_t src);
+      void Op_ISC(uint16_t src);
+      void Op_LAS(uint16_t src);
+      void Op_LAX(uint16_t src);
+      void Op_LXA(uint16_t src);
+      void Op_RLA(uint16_t src);
+      void Op_RRA(uint16_t src);
+      void Op_SAX(uint16_t src);
+      void Op_SBX(uint16_t src);
+      void Op_SHA(uint16_t src);
+      void Op_SHX(uint16_t src);
+      void Op_SHY(uint16_t src);
+      void Op_SLO(uint16_t src);
+      void Op_SRE(uint16_t src);
+      void Op_TAS(uint16_t src);
+#endif
+
       void Op_ILLEGAL(uint16_t src);
 
       void Svc_NMI();
