@@ -41,7 +41,14 @@ cp "$src_file" "$dest_dir/" || { echo "Copy failed"; exit 1; }
 (
   cd "$(dirname "$dest_dir")"
   echo "Running assembler under DOSBox..."
-  dosbox -c "mount c $(pwd)" \
+  dosbox \
+         -c "config -set core=dynamic" \
+         -c "config -set cycles=max" \
+         -c "config -set cycleup=100000" \
+         -c "config -set cycledown=100000" \
+         -c "config -set frameskip=5" \
+         -c "config -set output=surface" \
+         -c "mount c $(pwd)" \
          -c "c:" \
          -c "cd as65_142" \
          -c "AS65-DOS.EXE -x1 -o${base_name}.hex -l -m -s2 -w -h0 -c -i -t -u -z $(basename "$src_file")" \
