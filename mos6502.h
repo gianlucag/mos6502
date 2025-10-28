@@ -54,6 +54,7 @@ class mos6502
       bool illegalOpcode;
 
       bool crossed;
+      bool branched;
 
       bool irq_line;      // current state of the line
 

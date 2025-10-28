@@ -9,23 +9,23 @@
 #define ZERO      0x02
 #define CARRY     0x01
 
-#define SET_NEGATIVE(x) (x ? (status |= NEGATIVE) : (status &= (~NEGATIVE)) )
-#define SET_OVERFLOW(x) (x ? (status |= OVERFLOW) : (status &= (~OVERFLOW)) )
-//#define SET_CONSTANT(x) (x ? (status |= CONSTANT) : (status &= (~CONSTANT)) )
-//#define SET_BREAK(x) (x ? (status |= BREAK) : (status &= (~BREAK)) )
-#define SET_DECIMAL(x) (x ? (status |= DECIMAL) : (status &= (~DECIMAL)) )
-#define SET_INTERRUPT(x) (x ? (status |= INTERRUPT) : (status &= (~INTERRUPT)) )
-#define SET_ZERO(x) (x ? (status |= ZERO) : (status &= (~ZERO)) )
-#define SET_CARRY(x) (x ? (status |= CARRY) : (status &= (~CARRY)) )
+#define SET_NEGATIVE(x)  ((x) ? (status |= NEGATIVE)  : (status &= (~NEGATIVE)) )
+#define SET_OVERFLOW(x)  ((x) ? (status |= OVERFLOW)  : (status &= (~OVERFLOW)) )
+#define SET_CONSTANT(x)  ((x) ? (status |= CONSTANT)  : (status &= (~CONSTANT)) )
+#define SET_BREAK(x)     ((x) ? (status |= BREAK)     : (status &= (~BREAK)) )
+#define SET_DECIMAL(x)   ((x) ? (status |= DECIMAL)   : (status &= (~DECIMAL)) )
+#define SET_INTERRUPT(x) ((x) ? (status |= INTERRUPT) : (status &= (~INTERRUPT)) )
+#define SET_ZERO(x)      ((x) ? (status |= ZERO)      : (status &= (~ZERO)) )
+#define SET_CARRY(x)     ((x) ? (status |= CARRY)     : (status &= (~CARRY)) )
 
-#define IF_NEGATIVE() ((status & NEGATIVE) ? true : false)
-#define IF_OVERFLOW() ((status & OVERFLOW) ? true : false)
-#define IF_CONSTANT() ((status & CONSTANT) ? true : false)
-#define IF_BREAK() ((status & BREAK) ? true : false)
-#define IF_DECIMAL() ((status & DECIMAL) ? true : false)
+#define IF_NEGATIVE()  ((status & NEGATIVE) ? true : false)
+#define IF_OVERFLOW()  ((status & OVERFLOW) ? true : false)
+#define IF_CONSTANT()  ((status & CONSTANT) ? true : false)
+#define IF_BREAK()     ((status & BREAK) ? true : false)
+#define IF_DECIMAL()   ((status & DECIMAL) ? true : false)
 #define IF_INTERRUPT() ((status & INTERRUPT) ? true : false)
-#define IF_ZERO() ((status & ZERO) ? true : false)
-#define IF_CARRY() ((status & CARRY) ? true : false)
+#define IF_ZERO()      ((status & ZERO) ? true : false)
+#define IF_CARRY()     ((status & CARRY) ? true : false)
 
 mos6502::Instr mos6502::InstrTable[256];
 
@@ -1655,6 +1655,9 @@ void mos6502::Run(
       Exec(instr);
 
       cycleCount += instr.cycles;
+      if (branched) {
+         cycleCount++;
+      }
       if (instr.penalty && crossed) {
          cycleCount++;
       }
@@ -1697,6 +1700,7 @@ void mos6502::RunEternally()
 void mos6502::Exec(Instr i)
 {
    crossed = false;
+   branched = false;
    uint16_t src = (this->*i.addr)();
    (this->*i.code)(src);
 }
@@ -1821,9 +1825,10 @@ void mos6502::Op_ADC(uint16_t src)
    uint8_t m = Read(src);
    unsigned int tmp = m + A + (IF_CARRY() ? 1 : 0);
 
-   // N and V computed *BEFORE* adjustment
-   SET_NEGATIVE(tmp & 0x80);
+   // N V Z computed *BEFORE* adjustment
    SET_OVERFLOW(!((A ^ m) & 0x80) && ((A ^ tmp) & 0x80));
+   SET_NEGATIVE(tmp & 0x80);
+   SET_ZERO(!(tmp & 0xFF));
 
    if (IF_DECIMAL())
    {
@@ -1833,13 +1838,16 @@ void mos6502::Op_ADC(uint16_t src)
          AL = ((AL + 6) & 0xF) + 0x10;
       }
       tmp = (m & 0xF0) + (A & 0xF0) + AL;
+
+      // N V recomputed
+      SET_OVERFLOW(!((A ^ m) & 0x80) && ((A ^ tmp) & 0x80));
+      SET_NEGATIVE(tmp & 0x80);
+
       if (tmp >= 0xA0) tmp += 0x60;
    }
 
-   // Z and C computed *AFTER* adjustment
-   SET_ZERO(!(tmp & 0xFF));
+   // C computed *AFTER* adjustment
    SET_CARRY(tmp > 0xFF);
-
    A = tmp & 0xFF;
    return;
 }
@@ -1886,6 +1894,7 @@ void mos6502::Op_BCC(uint16_t src)
    if (!IF_CARRY())
    {
       pc = src;
+      branched = true; // indicate we did branch
    }
    else {
       crossed = false; // branch not taken does not suffer penalty
@@ -1898,6 +1907,7 @@ void mos6502::Op_BCS(uint16_t src)
    if (IF_CARRY())
    {
       pc = src;
+      branched = true; // indicate we did branch
    }
    else {
       crossed = false; // branch not taken does not suffer penalty
@@ -1910,6 +1920,7 @@ void mos6502::Op_BEQ(uint16_t src)
    if (IF_ZERO())
    {
       pc = src;
+      branched = true; // indicate we did branch
    }
    else {
       crossed = false; // branch not taken does not suffer penalty
@@ -1921,8 +1932,7 @@ void mos6502::Op_BIT(uint16_t src)
 {
    uint8_t m = Read(src);
    uint8_t res = m & A;
-   SET_NEGATIVE(res & 0x80);
-   status = (status & 0x3F) | (uint8_t)(m & 0xC0) | CONSTANT | BREAK;
+   status = (status & 0x3F) | (uint8_t)(m & 0xC0);
    SET_ZERO(!res);
    return;
 }
@@ -1932,6 +1942,7 @@ void mos6502::Op_BMI(uint16_t src)
    if (IF_NEGATIVE())
    {
       pc = src;
+      branched = true; // indicate we did branch
    }
    else {
       crossed = false; // branch not taken does not suffer penalty
@@ -1944,6 +1955,7 @@ void mos6502::Op_BNE(uint16_t src)
    if (!IF_ZERO())
    {
       pc = src;
+      branched = true; // indicate we did branch
    }
    else {
       crossed = false; // branch not taken does not suffer penalty
@@ -1956,6 +1968,7 @@ void mos6502::Op_BPL(uint16_t src)
    if (!IF_NEGATIVE())
    {
       pc = src;
+      branched = true; // indicate we did branch
    }
    else {
       crossed = false; // branch not taken does not suffer penalty
@@ -1979,6 +1992,7 @@ void mos6502::Op_BVC(uint16_t src)
    if (!IF_OVERFLOW())
    {
       pc = src;
+      branched = true; // indicate we did branch
    }
    else {
       crossed = false; // branch not taken does not suffer penalty
@@ -1991,6 +2005,7 @@ void mos6502::Op_BVS(uint16_t src)
    if (IF_OVERFLOW())
    {
       pc = src;
+      branched = true; // indicate we did branch
    }
    else {
       crossed = false; // branch not taken does not suffer penalty
@@ -2125,6 +2140,12 @@ void mos6502::Op_JSR(uint16_t src)
    pc--;
    StackPush((pc >> 8) & 0xFF);
    StackPush(pc & 0xFF);
+
+   // this fixes an obscure problem that only happens when
+   // the operand and the processor stack are at the same
+   // place...
+   src = (src & 0xFF) | (Read(pc) << 8);
+
    pc = src;
 }
 
@@ -2208,8 +2229,7 @@ void mos6502::Op_PLA(uint16_t src)
 
 void mos6502::Op_PLP(uint16_t src)
 {
-   status = StackPop() | CONSTANT | BREAK;
-   //SET_CONSTANT(1);
+   status = (status & (CONSTANT | BREAK)) | (StackPop() & ~(CONSTANT | BREAK));
    return;
 }
 
@@ -2269,14 +2289,14 @@ void mos6502::Op_RTI(uint16_t src)
 {
    uint8_t lo, hi;
 
-   status = StackPop() | CONSTANT | BREAK;
+   status = (status & (CONSTANT | BREAK)) | (StackPop() & ~(CONSTANT | BREAK));
 
    lo = StackPop();
    hi = StackPop();
 
    pc = (hi << 8) | lo;
 
-   nmi_inhibit = false; // always, more efficient that if()
+   nmi_inhibit = false; // always, more efficient than if()
 
    return;
 }
@@ -2297,9 +2317,10 @@ void mos6502::Op_SBC(uint16_t src)
    uint8_t m   = Read(src);
    int tmp     = A - m - (IF_CARRY() ? 0 : 1);
 
-   // N and V computed *BEFORE* adjustment (binary semantics)
-   SET_NEGATIVE(tmp & 0x80 );
+   // N V Z computed *BEFORE* adjustment (binary semantics)
    SET_OVERFLOW(((A ^ m) & (A ^ tmp) & 0x80) != 0);
+   SET_NEGATIVE(tmp & 0x80 );
+   SET_ZERO(!(tmp & 0xFF));
 
    if (IF_DECIMAL())
    {
@@ -2309,11 +2330,15 @@ void mos6502::Op_SBC(uint16_t src)
          AL = ((AL - 6) & 0x0F) - 0x10;
       }
       tmp = (A & 0xF0) - (m & 0xF0) + AL;
-      if (tmp < 0) tmp -= 0x60;
+
+      // N V recompute
+      SET_OVERFLOW(((A ^ m) & (A ^ tmp) & 0x80) != 0);
+      SET_NEGATIVE(tmp & 0x80 );
+
+      if (tmp < 0) tmp -= 0x60; // ???? huh ????
    }
 
-   // Z and C computed *AFTER* adjustment
-   SET_ZERO(!(tmp & 0xFF));
+   // C computed *AFTER* adjustment
    SET_CARRY( tmp >= 0 );
 
    A = tmp & 0xFF;
@@ -2452,11 +2477,12 @@ void mos6502::Op_ARR(uint16_t src)
    bool carry = IF_CARRY();
    uint8_t m = Read(src);
    uint8_t res = m & A;
-   SET_CARRY(res & 1);
    res >>= 1;
    if (carry) {
       res |= 0x80;
    }
+   SET_CARRY((res >> 6) & 1);
+   SET_OVERFLOW(((res >> 6) ^ (res >> 5)) & 1);
    SET_NEGATIVE(res & 0x80);
    SET_ZERO(!res);
 
@@ -2465,9 +2491,14 @@ void mos6502::Op_ARR(uint16_t src)
       // ARR in decimal mode routes signals through the ALU’s decimal
       // adder path, but with no valid carry-in, so the outputs are
       // garbage. It’s not emulatable in a meaningful way.
-   }
 
-   SET_OVERFLOW(((A ^ res) & 0x40) != 0);
+      if ((res & 0xF) >= 0xA) {
+         res += 6;
+      }
+      if (res >= 0xA0) {
+         res += 0x60;
+      }
+   }
 
    A = res;
    return;
@@ -2497,9 +2528,10 @@ void mos6502::Op_ISC(uint16_t src)
    // from here on is Op_SBC
    int tmp     = A - m - (IF_CARRY() ? 0 : 1);
 
-   // N and V computed *BEFORE* adjustment (binary semantics)
-   SET_NEGATIVE(tmp & 0x80 );
+   // N V Z computed *BEFORE* adjustment (binary semantics)
    SET_OVERFLOW(((A ^ m) & (A ^ tmp) & 0x80) != 0);
+   SET_NEGATIVE(tmp & 0x80 );
+   SET_ZERO(!(tmp & 0xFF));
 
    if (IF_DECIMAL())
    {
@@ -2509,11 +2541,15 @@ void mos6502::Op_ISC(uint16_t src)
          AL = ((AL - 6) & 0x0F) - 0x10;
       }
       tmp = (A & 0xF0) - (m & 0xF0) + AL;
-      if (tmp < 0) tmp -= 0x60;
+
+      // N V recompute
+      SET_OVERFLOW(((A ^ m) & (A ^ tmp) & 0x80) != 0);
+      SET_NEGATIVE(tmp & 0x80 );
+
+      if (tmp < 0) tmp -= 0x60; // ???? huh ????
    }
 
-   // Z and C computed *AFTER* adjustment
-   SET_ZERO(!(tmp & 0xFF));
+   // C computed *AFTER* adjustment
    SET_CARRY( tmp >= 0 );
 
    A = tmp & 0xFF;
@@ -2567,21 +2603,22 @@ void mos6502::Op_RLA(uint16_t src)
 void mos6502::Op_RRA(uint16_t src)
 {
    uint16_t m = Read(src);
-   bool oldC = false;
    if (IF_CARRY()) {
       m |= 0x100;
-      oldC = true;
    }
    SET_CARRY(m & 0x01);
    m >>= 1;
    m &= 0xFF;
    Write(src, m);
 
-   unsigned int tmp = m + A + (oldC ? 1 : 0);
+   // TODO FIX, the rest of this is just Op_ADC
+   // combine common code into a helper function
+   unsigned int tmp = m + A + (IF_CARRY() ? 1 : 0);
 
-   // N and V computed *BEFORE* adjustment
-   SET_NEGATIVE(tmp & 0x80);
+   // N V Z computed *BEFORE* adjustment
    SET_OVERFLOW(!((A ^ m) & 0x80) && ((A ^ tmp) & 0x80));
+   SET_NEGATIVE(tmp & 0x80);
+   SET_ZERO(!(tmp & 0xFF));
 
    if (IF_DECIMAL())
    {
@@ -2591,13 +2628,16 @@ void mos6502::Op_RRA(uint16_t src)
          AL = ((AL + 6) & 0xF) + 0x10;
       }
       tmp = (m & 0xF0) + (A & 0xF0) + AL;
+
+      // N V recomputed
+      SET_OVERFLOW(!((A ^ m) & 0x80) && ((A ^ tmp) & 0x80));
+      SET_NEGATIVE(tmp & 0x80);
+
       if (tmp >= 0xA0) tmp += 0x60;
    }
 
-   // Z and C computed *AFTER* adjustment
-   SET_ZERO(!(tmp & 0xFF));
+   // C computed *AFTER* adjustment
    SET_CARRY(tmp > 0xFF);
-
    A = tmp & 0xFF;
    return;
 }
